@@ -1,0 +1,6 @@
+@FCP_HostAddress = http://localhost:5290
+
+GET {{FCP_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
