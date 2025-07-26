@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Folder Include="Identity\" />
+    <Folder Include="Migrations\" />
     <Folder Include="Services\" />
     <Folder Include="Repositories\" />
   </ItemGroup>
@@ -17,6 +18,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Npgsql" Version="8.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
