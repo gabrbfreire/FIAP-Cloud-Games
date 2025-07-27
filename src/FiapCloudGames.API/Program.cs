@@ -1,3 +1,4 @@
+using FiapCloudGames.API.Configuration;
 using FiapCloudGames.Core.Entities;
 using FiapCloudGames.Core.Interfaces;
 using FiapCloudGames.Core.Services;
@@ -46,6 +47,7 @@ builder.Services.AddAuthentication(options =>
 );
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
@@ -53,6 +55,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.Migrate();
+    await DbSeeder.SeedData(app);
 }
 
 app.UseSwagger();

@@ -1,9 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace FiapCloudGames.Application.DTOs;
+namespace FiapCloudGames.API.DTOs.Auth;
 
-public class LoginDto
+public class SignupDto
 {
+    [Required]
+    [MaxLength(30)]
+    public string Name { get; set; } = string.Empty;
+
     [Required]
     [MaxLength(30)]
     [EmailAddress]

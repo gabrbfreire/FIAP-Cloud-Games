@@ -1,0 +1,11 @@
+﻿using FiapCloudGames.Core.Entities;
+using Microsoft.AspNetCore.Identity;
+
+namespace FiapCloudGames.Core.Interfaces;
+
+public interface IAuthService
+{
+    Task<IdentityResult> SignupAsync(string name, string email, string password);
+    Task<TokenInfo?> LoginAsync(string email, string password);
+    Task<IdentityResult> DeleteAsync(string email);
+}

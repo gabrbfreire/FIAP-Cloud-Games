@@ -1,12 +1,10 @@
-﻿using FiapCloudGames.Application.DTOs;
+﻿using FiapCloudGames.API.DTOs.Auth;
 using FiapCloudGames.Core.Entities;
 using FiapCloudGames.Core.Interfaces;
 using FiapCloudGames.Infra.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Data;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace FiapCloudGames.API.Controllers;
 
@@ -18,71 +16,35 @@ public class AuthController : ControllerBase
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ILogger<AuthController> _logger;
     private readonly ITokenService _tokenService;
+    private readonly IAuthService _authService;
     private readonly AppDbContext _context;
 
     public AuthController(UserManager<ApplicationUser> userManager,
                  RoleManager<IdentityRole> roleManager,
                  ILogger<AuthController> logger,
-                 ITokenService tokenService, AppDbContext context)
+                 ITokenService tokenService,
+                 AppDbContext context,
+                 IAuthService authService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _logger = logger;
         _tokenService = tokenService;
         _context = context;
+        _authService = authService;
     }
 
     [HttpPost("signup")]
-    public async Task<IActionResult> Signup(SignupDto model)
+    public async Task<IActionResult> Signup(SignupDto dto)
     {
         try
         {
-            var existingUser = await _userManager.FindByNameAsync(model.Email);
-            if (existingUser != null)
+            var signup = await _authService.SignupAsync(dto.Name, dto.Email, dto.Password);
+
+            if (signup != null)
+                return CreatedAtAction(nameof(Signup), null);
+            else
                 return BadRequest("User already exists");
-
-            if ((await _roleManager.RoleExistsAsync(Roles.User)) == false)
-            {
-                var roleResult = await _roleManager
-                      .CreateAsync(new IdentityRole(Roles.User));
-
-                if (roleResult.Succeeded == false)
-                {
-                    var roleErros = roleResult.Errors.Select(e => e.Description);
-                    _logger.LogError($"Failed to create user role. Errors : {string.Join(",", roleErros)}");
-                    return BadRequest($"Failed to create user role. Errors : {string.Join(",", roleErros)}");
-                }
-            }
-
-            ApplicationUser user = new()
-            {
-                Email = model.Email,
-                SecurityStamp = Guid.NewGuid().ToString(),
-                UserName = model.Email,
-                Name = model.Name,
-                EmailConfirmed = true
-            };
-
-            var createUserResult = await _userManager.CreateAsync(user, model.Password);
-
-            if (createUserResult.Succeeded == false)
-            {
-                var errors = createUserResult.Errors.Select(e => e.Description);
-                _logger.LogError(
-                    $"Failed to create user. Errors: {string.Join(", ", errors)}"
-                );
-                return BadRequest($"Failed to create user. Errors: {string.Join(", ", errors)}");
-            }
-
-            var addUserToRoleResult = await _userManager.AddToRoleAsync(user: user, role: Roles.User);
-
-            if (addUserToRoleResult.Succeeded == false)
-            {
-                var errors = addUserToRoleResult.Errors.Select(e => e.Description);
-                _logger.LogError($"Failed to add role to the user. Errors : {string.Join(",", errors)}");
-            }
-
-            return CreatedAtAction(nameof(Signup), null);
         }
         catch (Exception ex)
         {
@@ -91,93 +53,42 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginDto loginModel)
+    public async Task<IActionResult> Login(LoginDto dto)
     {
         try
         {
-            var user = await _userManager.FindByNameAsync(loginModel.UserName);
-            
-            if (user == null) return BadRequest("User with this username is not registered with us.");
+            var tokenInfo = await _authService.LoginAsync(dto.Email, dto.Password);
 
-            bool isValidPassword = await _userManager.CheckPasswordAsync(user, loginModel.Password);
-
-            if (isValidPassword == false) return Unauthorized();
-
-            List<Claim> authClaims = [
-                new (ClaimTypes.Name, loginModel.UserName),
-                new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            ];
-
-            var userRoles = await _userManager.GetRolesAsync(user);
-
-            foreach (var userRole in userRoles)
-                authClaims.Add(new Claim(ClaimTypes.Role, userRole));
-
-            var token = _tokenService.GenerateAccessToken(authClaims);
-            string refreshToken = _tokenService.GenerateRefreshToken();
-            var tokenInfo = _context.TokenInfos.FirstOrDefault(a => a.Username == user.UserName);
-
-            if (tokenInfo == null)
-            {
-                var ti = new TokenInfo
+            if (tokenInfo != null)
+                return Ok(new TokenDto
                 {
-                    Username = user.UserName,
-                    RefreshToken = refreshToken,
-                    ExpiredAt = DateTime.UtcNow.AddDays(7)
-                };
-                _context.TokenInfos.Add(ti);
-            } else {
-                tokenInfo.RefreshToken = refreshToken;
-                tokenInfo.ExpiredAt = DateTime.UtcNow.AddDays(7);
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new TokenDto
-            {
-                AccessToken = token,
-                RefreshToken = refreshToken
-            });
+                    AccessToken = tokenInfo.Token
+                });
+            else
+                return BadRequest("Invalid email or password");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
-            return Unauthorized();
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
         }
     }
 
-    [HttpPost("token/refresh")]
-    public async Task<IActionResult> Refresh(TokenDto tokenDto)
+    [Authorize(Roles = Roles.Admin)]
+    [HttpDelete("delete")]
+    public async Task<IActionResult> Delete(DeleteUserDto dto)
     {
         try
         {
-            var principal = _tokenService.GetPrincipalFromExpiredToken(tokenDto.AccessToken);
-            var username = principal.Identity.Name;
+            var tokenInfo = await _authService.DeleteAsync(dto.Email);
 
-            var tokenInfo = _context.TokenInfos.SingleOrDefault(u => u.Username == username);
-            if (tokenInfo == null
-                || tokenInfo.RefreshToken != tokenDto.RefreshToken
-                || tokenInfo.ExpiredAt <= DateTime.UtcNow)
-            {
-                return BadRequest("Invalid refresh token. Please login again.");
-            }
-
-            var newAccessToken = _tokenService.GenerateAccessToken(principal.Claims);
-            var newRefreshToken = _tokenService.GenerateRefreshToken();
-
-            tokenInfo.RefreshToken = newRefreshToken;
-            await _context.SaveChangesAsync();
-
-            return Ok(new TokenDto
-            {
-                AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken
-            });
+            if (tokenInfo != null)
+                return Ok();
+            else
+                return BadRequest("Invalid email");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
-            return StatusCode(StatusCodes.Status500InternalServerError);
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
         }
     }
 }

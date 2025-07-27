@@ -1,15 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace FiapCloudGames.Application.DTOs;
+namespace FiapCloudGames.API.DTOs.Auth;
 
-public class LoginDto
+public class DeleteUserDto
 {
     [Required]
     [MaxLength(30)]
     [EmailAddress]
     public string Email { get; set; } = string.Empty;
-
-    [Required]
-    [MaxLength(30)]
-    public string Password { get; set; } = string.Empty;
 }

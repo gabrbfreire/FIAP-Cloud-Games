@@ -1,9 +1,8 @@
 ﻿using FiapCloudGames.Core.Entities;
 using FiapCloudGames.Core.Enums;
 using Microsoft.AspNetCore.Identity;
-using System.Data;
 
-namespace FiapCloudGames.Infra.Data;
+namespace FiapCloudGames.API.Configuration;
 
 public class DbSeeder
 {
@@ -11,67 +10,29 @@ public class DbSeeder
     {
         using var scope = app.ApplicationServices.CreateScope();
 
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<DbSeeder>>();
+        var userManager = scope.ServiceProvider.GetService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetService<RoleManager<IdentityRole>>();
 
-        try
+        if (userManager.Users.Any() == false)
         {
-            var userManager = scope.ServiceProvider.GetService<UserManager<ApplicationUser>>();
-            var roleManager = scope.ServiceProvider.GetService<RoleManager<IdentityRole>>();
-
-            if (userManager.Users.Any() == false)
+            var user = new ApplicationUser
             {
-                var user = new ApplicationUser
-                {
-                    Name = "Admin",
-                    UserName = "admin@gmail.com",
-                    Email = "admin@gmail.com",
-                    EmailConfirmed = true,
-                    SecurityStamp = Guid.NewGuid().ToString()
-                };
+                Name = "Admin",
+                UserName = "admin@gmail.com",
+                Email = "admin@gmail.com",
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString()
+            };
 
-                if ((await roleManager.RoleExistsAsync(UserRoleEnum.Admin.ToString())) == false)
-                {
-                    logger.LogInformation("Admin role is creating");
-                    var roleResult = await roleManager
-                        .CreateAsync(new IdentityRole(UserRoleEnum.Admin.ToString()));
+            if ((await roleManager.RoleExistsAsync(UserRoleEnum.Admin.ToString())) == false)
+                await roleManager.CreateAsync(new IdentityRole(UserRoleEnum.Admin.ToString()));
 
-                    if (roleResult.Succeeded == false)
-                    {
-                        var roleErros = roleResult.Errors.Select(e => e.Description);
-                        logger.LogError($"Failed to create admin role. Errors : {string.Join(",", roleErros)}");
+            if ((await roleManager.RoleExistsAsync(Roles.User)) == false)
+                await roleManager.CreateAsync(new IdentityRole(Roles.User));
 
-                        return;
-                    }
-                    logger.LogInformation("Admin role is created");
-                }
+            var createUserResult = await userManager.CreateAsync(user: user, password: "Admin@123");
 
-                var createUserResult = await userManager
-                        .CreateAsync(user: user, password: "Admin@123");
-
-                if (createUserResult.Succeeded == false)
-                {
-                    var errors = createUserResult.Errors.Select(e => e.Description);
-                    logger.LogError(
-                        $"Failed to create admin user. Errors: {string.Join(", ", errors)}"
-                    );
-                    return;
-                }
-
-                var addUserToRoleResult = await userManager
-                                .AddToRoleAsync(user: user, role: UserRoleEnum.Admin.ToString());
-
-                if (addUserToRoleResult.Succeeded == false)
-                {
-                    var errors = addUserToRoleResult.Errors.Select(e => e.Description);
-                    logger.LogError($"Failed to add admin role to user. Errors : {string.Join(",", errors)}");
-                }
-                logger.LogInformation("Admin user is created");
-            }
-        }
-
-        catch (Exception ex)
-        {
-            logger.LogCritical(ex.Message);
+            var addUserToRoleResult = await userManager.AddToRoleAsync(user: user, role: UserRoleEnum.Admin.ToString());
         }
     }
 }

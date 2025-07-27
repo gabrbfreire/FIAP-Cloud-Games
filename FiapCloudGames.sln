@@ -5,8 +5,6 @@ VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiapCloudGames.API", "src\FiapCloudGames.API\FiapCloudGames.API.csproj", "{73AA1E47-0CB7-4FA1-7D42-4630D287E3F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiapCloudGames.Application", "src\FiapCloudGames.Application\FiapCloudGames.Application.csproj", "{9F0FD116-92EC-76D9-2DA5-0FA7AD55A61F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiapCloudGames.Core", "src\FiapCloudGames.Core\FiapCloudGames.Core.csproj", "{2E2DCCBE-BC65-2B96-0C8B-983D6AA135FC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FiapCloudGames.Infra", "src\FiapCloudGames.Infra\FiapCloudGames.Infra.csproj", "{64459427-5C77-B3AA-6857-964B3717A3D8}"
@@ -23,10 +21,6 @@ Global
 		{73AA1E47-0CB7-4FA1-7D42-4630D287E3F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73AA1E47-0CB7-4FA1-7D42-4630D287E3F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73AA1E47-0CB7-4FA1-7D42-4630D287E3F2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9F0FD116-92EC-76D9-2DA5-0FA7AD55A61F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9F0FD116-92EC-76D9-2DA5-0FA7AD55A61F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9F0FD116-92EC-76D9-2DA5-0FA7AD55A61F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9F0FD116-92EC-76D9-2DA5-0FA7AD55A61F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2E2DCCBE-BC65-2B96-0C8B-983D6AA135FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2E2DCCBE-BC65-2B96-0C8B-983D6AA135FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E2DCCBE-BC65-2B96-0C8B-983D6AA135FC}.Release|Any CPU.ActiveCfg = Release|Any CPU

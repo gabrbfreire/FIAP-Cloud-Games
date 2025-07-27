@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace FiapCloudGames.Application.DTOs;
+namespace FiapCloudGames.API.DTOs.Auth;
 
 public class LoginDto
 {
