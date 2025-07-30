@@ -1,5 +1,5 @@
 ﻿using FiapCloudGames.API.DTOs.Auth;
-using FiapCloudGames.Core.Entities;
+using FiapCloudGames.Core.Entities.Identity;
 using FiapCloudGames.Core.Interfaces;
 using FiapCloudGames.Infra.Data;
 using Microsoft.AspNetCore.Authorization;

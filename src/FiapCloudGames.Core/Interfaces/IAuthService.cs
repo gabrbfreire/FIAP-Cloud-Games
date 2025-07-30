@@ -1,4 +1,4 @@
-﻿using FiapCloudGames.Core.Entities;
+﻿using FiapCloudGames.Core.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 
 namespace FiapCloudGames.Core.Interfaces;

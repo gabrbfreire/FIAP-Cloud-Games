@@ -1,6 +1,6 @@
 using FiapCloudGames.API.Configuration;
 using FiapCloudGames.API.Middlewares;
-using FiapCloudGames.Core.Entities;
+using FiapCloudGames.Core.Entities.Identity;
 using FiapCloudGames.Core.Interfaces;
 using FiapCloudGames.Core.Services;
 using FiapCloudGames.Infra.Data;

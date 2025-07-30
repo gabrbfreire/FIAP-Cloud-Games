@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Identity\" />
     <Folder Include="Migrations\" />
     <Folder Include="Repositories\" />
   </ItemGroup>

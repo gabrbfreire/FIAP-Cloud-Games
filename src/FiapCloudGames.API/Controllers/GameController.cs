@@ -1,4 +1,4 @@
-﻿using FiapCloudGames.Core.Entities;
+﻿using FiapCloudGames.Core.Entities.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

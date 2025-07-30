@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace FiapCloudGames.Core.Entities;
+namespace FiapCloudGames.Core.Entities.Identity;
 
 public class ApplicationUser : IdentityUser
 {

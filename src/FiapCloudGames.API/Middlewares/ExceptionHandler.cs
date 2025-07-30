@@ -2,7 +2,7 @@
 
 namespace FiapCloudGames.API.Middlewares;
 
-internal sealed class ExceptionHandler(
+internal class ExceptionHandler(
     RequestDelegate next,
     ILogger<ExceptionHandler> logger)
 {

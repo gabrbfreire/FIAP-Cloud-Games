@@ -1,4 +1,4 @@
-﻿using FiapCloudGames.Core.Entities;
+﻿using FiapCloudGames.Core.Entities.Identity;
 using FiapCloudGames.Core.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
