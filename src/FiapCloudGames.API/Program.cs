@@ -1,4 +1,5 @@
 using FiapCloudGames.API.Configuration;
+using FiapCloudGames.API.Middlewares;
 using FiapCloudGames.Core.Entities;
 using FiapCloudGames.Core.Interfaces;
 using FiapCloudGames.Core.Services;
@@ -58,6 +59,7 @@ using (var scope = app.Services.CreateScope())
     await DbSeeder.SeedData(app);
 }
 
+app.UseMiddleware<ExceptionHandler>();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();

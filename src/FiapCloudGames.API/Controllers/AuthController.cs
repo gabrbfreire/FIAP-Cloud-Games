@@ -37,58 +37,37 @@ public class AuthController : ControllerBase
     [HttpPost("signup")]
     public async Task<IActionResult> Signup(SignupDto dto)
     {
-        try
-        {
-            var signup = await _authService.SignupAsync(dto.Name, dto.Email, dto.Password);
+        var signup = await _authService.SignupAsync(dto.Name, dto.Email, dto.Password);
 
-            if (signup != null)
-                return CreatedAtAction(nameof(Signup), null);
-            else
-                return BadRequest("User already exists");
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-        }
+        if (signup != null)
+            return CreatedAtAction(nameof(Signup), null);
+        else
+            return BadRequest("User already exists");
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto dto)
     {
-        try
-        {
-            var tokenInfo = await _authService.LoginAsync(dto.Email, dto.Password);
+        var tokenInfo = await _authService.LoginAsync(dto.Email, dto.Password);
 
-            if (tokenInfo != null)
-                return Ok(new TokenDto
-                {
-                    AccessToken = tokenInfo.Token
-                });
-            else
-                return BadRequest("Invalid email or password");
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-        }
+        if (tokenInfo != null)
+            return Ok(new TokenDto
+            {
+                AccessToken = tokenInfo.Token
+            });
+        else
+            return BadRequest("Invalid email or password");
     }
 
     [Authorize(Roles = Roles.Admin)]
     [HttpDelete("delete")]
     public async Task<IActionResult> Delete(DeleteUserDto dto)
     {
-        try
-        {
-            var tokenInfo = await _authService.DeleteAsync(dto.Email);
+        var tokenInfo = await _authService.DeleteAsync(dto.Email);
 
-            if (tokenInfo != null)
-                return Ok();
-            else
-                return BadRequest("Invalid email");
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-        }
+        if (tokenInfo != null)
+            return Ok();
+        else
+            return BadRequest("Invalid email");
     }
 }

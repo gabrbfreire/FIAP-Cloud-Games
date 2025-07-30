@@ -19,10 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Middlewares\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\FiapCloudGames.Core\FiapCloudGames.Core.csproj" />
     <ProjectReference Include="..\FiapCloudGames.Infra\FiapCloudGames.Infra.csproj" />
   </ItemGroup>
