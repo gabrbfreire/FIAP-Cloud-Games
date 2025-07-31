@@ -37,7 +37,7 @@ public class LogDeRequisicaoMiddleware
         var corpoResposta = await new StreamReader(contexto.Response.Body).ReadToEndAsync();
         contexto.Response.Body.Seek(0, SeekOrigin.Begin);
 
-        _logger.LogInformation("📤 Resposta: {StatusCode}\nCorpo: {Corpo}",
+        _logger.LogInformation("Resposta: {StatusCode}\nCorpo: {Corpo}",
             contexto.Response.StatusCode,
             string.IsNullOrWhiteSpace(corpoResposta) ? "" : corpoResposta);
 
@@ -72,6 +72,6 @@ public class LogDeRequisicaoMiddleware
     private static readonly HashSet<string> CamposSensiveis = new(StringComparer.OrdinalIgnoreCase)
     {
         "Password",
-        "AccessToken"
+        "accessToken"
     };
 }

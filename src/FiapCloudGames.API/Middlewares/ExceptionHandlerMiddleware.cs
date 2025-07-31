@@ -16,6 +16,10 @@ internal class ExceptionHandlerMiddleware(
 		{
             logger.LogError(ex, "Unhandled exception occurred");
 
+            logger.LogInformation("Resposta: {StatusCode}\nCorpo: {Corpo}",
+            500,
+            string.IsNullOrWhiteSpace(ex.Message + " " + ex.StackTrace));
+
             context.Response.StatusCode = ex switch
             {
                 ApplicationException => StatusCodes.Status400BadRequest,
