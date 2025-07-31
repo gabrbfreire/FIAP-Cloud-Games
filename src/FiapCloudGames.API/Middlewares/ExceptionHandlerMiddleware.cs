@@ -2,9 +2,9 @@
 
 namespace FiapCloudGames.API.Middlewares;
 
-internal class ExceptionHandler(
+internal class ExceptionHandlerMiddleware(
     RequestDelegate next,
-    ILogger<ExceptionHandler> logger)
+    ILogger<ExceptionHandlerMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {

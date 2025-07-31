@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +59,20 @@ builder.Services.AddScoped<IJogoService, JogoService>();
 
 builder.Services.AddScoped<IJogoRepository, JogoRepository>();
 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .WriteTo.File(
+        path: "logs/log.json",
+        rollingInterval: RollingInterval.Day,
+        formatter: new Serilog.Formatting.Json.JsonFormatter(),
+        restrictedToMinimumLevel: LogEventLevel.Information
+    )
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -66,7 +82,9 @@ using (var scope = app.Services.CreateScope())
     await DbSeeder.SeedData(app);
 }
 
-app.UseMiddleware<ExceptionHandler>();
+app.UseMiddleware<ExceptionHandlerMiddleware>();
+app.UseMiddleware<LogDeRequisicaoMiddleware>();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
