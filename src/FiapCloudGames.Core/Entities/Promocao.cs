@@ -2,13 +2,13 @@
 
 public class Promocao
 {
-    public Guid Id { get; private set; }
-    public string Nome { get; private set; }
-    public decimal PercentualDeDesconto { get; private set; }
-    public DateTime DataInicio { get; private set; }
-    public DateTime DataFim { get; private set; }
+    public Guid Id { get; set; }
+    public string Nome { get; set; }
+    public decimal PercentualDeDesconto { get; set; }
+    public DateTime DataInicio { get; set; }
+    public DateTime DataFim { get; set; }
 
-    public ICollection<Jogo> Jogos { get; private set; }
+    public ICollection<Jogo> Jogos { get; set; }
 
     protected Promocao() { }
 

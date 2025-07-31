@@ -48,10 +48,22 @@ public class JogoService : IJogoService
         var jogos = await _jogoRepository.BuscarTodosAsync();
 
         foreach (var jogo in jogos)
-        {
-            jogo.CalcularPrecoComDesconto(dataReferencia);
-        }
+            CalcularPrecoComDesconto(dataReferencia, jogo);
 
         return jogos;
+    }
+
+    private void CalcularPrecoComDesconto(DateTime dataAtual, Jogo jogo)
+    {
+        if (jogo.Promocoes is null) return;
+
+        var promocaoMaisGenerosa = jogo.Promocoes
+            .Where(p => p.EstaAtiva(dataAtual))
+            .OrderByDescending(p => p.PercentualDeDesconto)
+            .FirstOrDefault();
+
+        if (promocaoMaisGenerosa is null) return;
+
+        jogo.Preco = jogo.Preco * (promocaoMaisGenerosa.PercentualDeDesconto / 100m);
     }
 }
