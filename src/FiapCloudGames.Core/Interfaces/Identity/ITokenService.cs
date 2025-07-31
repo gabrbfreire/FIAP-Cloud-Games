@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace FiapCloudGames.Core.Interfaces;
+namespace FiapCloudGames.Core.Interfaces.Identity;
 
 public interface ITokenService
 {

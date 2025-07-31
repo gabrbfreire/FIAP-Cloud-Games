@@ -1,10 +1,10 @@
 ﻿using FiapCloudGames.Core.Entities.Identity;
-using FiapCloudGames.Core.Interfaces;
+using FiapCloudGames.Core.Interfaces.Identity;
 using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace FiapCloudGames.Core.Services;
+namespace FiapCloudGames.Core.Services.Identity;
 
 public class AuthService : IAuthService
 {

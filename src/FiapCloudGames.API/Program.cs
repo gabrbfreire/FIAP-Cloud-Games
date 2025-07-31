@@ -1,9 +1,13 @@
 using FiapCloudGames.API.Configuration;
 using FiapCloudGames.API.Middlewares;
 using FiapCloudGames.Core.Entities.Identity;
-using FiapCloudGames.Core.Interfaces;
+using FiapCloudGames.Core.Interfaces.Identity;
+using FiapCloudGames.Core.Interfaces.Repositories;
+using FiapCloudGames.Core.Interfaces.Services;
 using FiapCloudGames.Core.Services;
+using FiapCloudGames.Core.Services.Identity;
 using FiapCloudGames.Infra.Data;
+using FiapCloudGames.Infra.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +53,9 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJogoService, JogoService>();
+
+builder.Services.AddScoped<IJogoRepository, JogoRepository>();
 
 var app = builder.Build();
 

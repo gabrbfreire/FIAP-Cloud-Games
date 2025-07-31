@@ -33,13 +33,17 @@ public class Jogo
             Promocoes.Add(promocao);
     }
 
-    public decimal ObterPrecoComDesconto(DateTime dataAtual)
+    public decimal CalcularPrecoComDesconto(DateTime dataAtual)
     {
-        var promocaoAtiva = Promocoes.FirstOrDefault(p => p.EstaAtiva(dataAtual));
-        if (promocaoAtiva == null)
+        var promocaoMaisGenerosa = Promocoes
+            .Where(p => p.EstaAtiva(dataAtual))
+            .OrderByDescending(p => p.PercentualDeDesconto)
+            .FirstOrDefault();
+
+        if (promocaoMaisGenerosa is null)
             return Preco;
 
-        var desconto = Preco * (promocaoAtiva.PercentualDeDesconto / 100);
+        var desconto = Preco * (promocaoMaisGenerosa.PercentualDeDesconto / 100m);
         return Preco - desconto;
     }
 }
