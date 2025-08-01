@@ -64,7 +64,7 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .MinimumLevel.Override("System", LogEventLevel.Warning)
     .WriteTo.File(
-        path: "logs/log.json",
+        path: "Logs/log.json",
         rollingInterval: RollingInterval.Day,
         formatter: new Serilog.Formatting.Json.JsonFormatter(),
         restrictedToMinimumLevel: LogEventLevel.Information

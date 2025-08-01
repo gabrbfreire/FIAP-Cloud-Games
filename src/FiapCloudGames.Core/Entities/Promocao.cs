@@ -4,7 +4,7 @@ public class Promocao
 {
     public Guid Id { get; set; }
     public string Nome { get; set; }
-    public decimal PercentualDeDesconto { get; set; }
+    public int PercentualDeDesconto { get; set; }
     public DateTime DataInicio { get; set; }
     public DateTime DataFim { get; set; }
 
@@ -12,7 +12,7 @@ public class Promocao
 
     protected Promocao() { }
 
-    public Promocao(string nome, decimal percentualDeDesconto, DateTime dataInicio, DateTime dataFim)
+    public Promocao(string nome, int percentualDeDesconto, DateTime dataInicio, DateTime dataFim)
     {
         if (percentualDeDesconto < 0 || percentualDeDesconto > 100)
             throw new ArgumentException("O desconto deve estar entre 0% e 100%.");
