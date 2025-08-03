@@ -1,4 +1,5 @@
-﻿using FiapCloudGames.API.DTOs;
+﻿using FiapCloudGames.API.DTOs.Request;
+using FiapCloudGames.API.DTOs.Response;
 using FiapCloudGames.Core.Entities;
 using FiapCloudGames.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -31,13 +32,19 @@ public class JogoController : ControllerBase
     {
         var jogo = await _jogoService.BuscarPorIdAsync(id);
         if (jogo == null) return NotFound();
-        return Ok(jogo);
+        return Ok(new JogoDTO(jogo));
     }
 
     [HttpGet]
     public async Task<IActionResult> BuscarTodos()
     {
         var jogos = await _jogoService.BuscarTodosAsync();
-        return Ok(jogos);
+
+        if(jogos == null) return NotFound();
+
+        var listaJogosDto = new List<JogoDTO>();
+        jogos.ToList().ForEach(j => listaJogosDto.Add(new JogoDTO(j)));
+
+        return Ok(listaJogosDto);
     }
 }

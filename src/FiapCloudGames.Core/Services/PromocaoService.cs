@@ -84,19 +84,4 @@ public class PromocaoService : IPromocaoService
         var promocao = await _promocaoRepository.BuscarPorIdAsync(promocaoId);
         return promocao?.EstaAtiva(data) ?? false;
     }
-
-    public async Task<decimal> CalcularPrecoComDescontoAsync(Guid jogoId, DateTime data)
-    {
-        var jogo = await _jogoRepository.BuscarPorIdAsync(jogoId);
-        if (jogo == null) throw new ArgumentException("Jogo não encontrado.");
-
-        var jogoComPromocoes = await _jogoRepository.BuscarPorIdAsync(jogoId);
-        var promocoesAtivas = jogoComPromocoes?.Promocoes?.Where(p => p.EstaAtiva(data)).ToList();
-
-        if (promocoesAtivas == null || !promocoesAtivas.Any())
-            return jogo.Preco;
-
-        var maiorDesconto = promocoesAtivas.Max(p => p.PercentualDeDesconto);
-        return jogo.Preco * (1 - maiorDesconto / 100);
-    }
 }

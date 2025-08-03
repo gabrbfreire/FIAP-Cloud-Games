@@ -1,4 +1,6 @@
 ﻿using FiapCloudGames.API.DTOs;
+using FiapCloudGames.API.DTOs.Request;
+using FiapCloudGames.API.DTOs.Response;
 using FiapCloudGames.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,22 +31,22 @@ public class PromocaoController : ControllerBase
     {
         var promocao = await _promocaoService.ObterPromocaoPorIdAsync(id);
         if (promocao == null) return NotFound();
-        return Ok(promocao);
+        return Ok(new PromocaoDTO(promocao));
     }
 
     [Authorize(Roles = "Admin")]
-    [HttpPost("{promocaoId:guid}/jogos/{jogoId:guid}")]
-    public async Task<IActionResult> AdicionarJogo(Guid promocaoId, Guid jogoId)
+    [HttpPost("adicionar-jogo")]
+    public async Task<IActionResult> AdicionarJogo([FromBody] AdicionarRemoverJogoPromocaoDto dto)
     {
-        await _promocaoService.AdicionarJogoAPromocaoAsync(promocaoId, jogoId);
+        await _promocaoService.AdicionarJogoAPromocaoAsync(dto.PromocaoId, dto.JogoId);
         return NoContent();
     }
 
     [Authorize(Roles = "Admin")]
-    [HttpDelete("{promocaoId:guid}/jogos/{jogoId:guid}")]
-    public async Task<IActionResult> RemoverJogo(Guid promocaoId, Guid jogoId)
+    [HttpDelete("remover-jogo")]
+    public async Task<IActionResult> RemoverJogo([FromBody] AdicionarRemoverJogoPromocaoDto dto)
     {
-        await _promocaoService.RemoverJogoDaPromocaoAsync(promocaoId, jogoId);
+        await _promocaoService.RemoverJogoDaPromocaoAsync(dto.PromocaoId, dto.JogoId);
         return NoContent();
     }
 
@@ -52,7 +54,13 @@ public class PromocaoController : ControllerBase
     public async Task<IActionResult> BuscarJogosPorPromocao(Guid promocaoId)
     {
         var jogos = await _promocaoService.ListarJogosEmPromocaoAsync(promocaoId);
-        return Ok(jogos);
+
+        if (jogos == null) return NotFound();
+
+        var listaJogosDto = new List<JogoDTO>();
+        jogos.ToList().ForEach(j => listaJogosDto.Add(new JogoDTO(j)));
+
+        return Ok(listaJogosDto);
     }
 
     [HttpGet("ativas")]
@@ -60,6 +68,12 @@ public class PromocaoController : ControllerBase
     {
         var dataConsulta = data ?? DateTime.Now;
         var promocoes = await _promocaoService.ListarPromocoesAtivasAsync(dataConsulta);
-        return Ok(promocoes);
+
+        if (promocoes == null) return NotFound();
+
+        var listaPromocoesDto = new List<PromocaoDTO>();
+        promocoes.ToList().ForEach(p => listaPromocoesDto.Add(new PromocaoDTO(p)));
+
+        return Ok(listaPromocoesDto);
     }
 }

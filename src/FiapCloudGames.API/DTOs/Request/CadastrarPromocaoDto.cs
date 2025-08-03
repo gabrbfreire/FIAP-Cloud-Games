@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace FiapCloudGames.API.DTOs;
 
@@ -12,23 +13,23 @@ public class CadastrarPromocaoDto
     [Range(1, 100, ErrorMessage = "O percentual de desconto deve ser entre 1 e 100.")]
     public int PercentualDeDesconto { get; set; }
 
-    [Required(ErrorMessage = "A data de início é obrigatória.")]
     public DateTime DataInicio { get; set; }
 
-    [Required(ErrorMessage = "A data de fim é obrigatória.")]
-    [CustomValidation(typeof(CadastrarPromocaoDto), "ValidateDatas")]
     public DateTime DataFim { get; set; }
 
-    public static ValidationResult ValidateDatas(DateTime dataFim, ValidationContext context)
+    public static ValidationResult ValidateDatas(string dataFimString, ValidationContext context)
     {
         var instance = (CadastrarPromocaoDto)context.ObjectInstance;
 
-        if (instance.DataInicio >= instance.DataFim)
+        var dataInicio = instance.DataInicio;
+        var dataFim = instance.DataFim;
+
+        if (dataInicio >= dataFim)
         {
             return new ValidationResult("A data de início deve ser menor que a data de fim.");
         }
 
-        if ((instance.DataFim - instance.DataInicio).TotalDays < 1)
+        if ((dataFim - dataInicio).TotalDays < 1)
         {
             return new ValidationResult("A diferença entre as datas deve ser de no mínimo 1 dia.");
         }

@@ -47,9 +47,12 @@ public class PromocaoRepository : IPromocaoRepository
 
     public async Task<IEnumerable<Promocao>> BuscarAtivasPorDataAsync(DateTime dataReferencia)
     {
+        var dataReferenciaSemHora = dataReferencia.Date;
+
         return await _context.Promocoes
             .Include(p => p.Jogos)
-            .Where(p => p.DataInicio <= dataReferencia && p.DataFim >= dataReferencia)
+            .Where(p => p.DataInicio.Date <= dataReferenciaSemHora &&
+                       p.DataFim.Date >= dataReferenciaSemHora)
             .ToListAsync();
     }
 

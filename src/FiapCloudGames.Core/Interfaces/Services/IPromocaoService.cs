@@ -11,5 +11,4 @@ public interface IPromocaoService
     Task RemoverJogoDaPromocaoAsync(Guid promocaoId, Guid jogoId);
     Task<IEnumerable<Jogo>> ListarJogosEmPromocaoAsync(Guid promocaoId);
     Task<bool> VerificarSePromocaoEstaAtivaAsync(Guid promocaoId, DateTime data);
-    Task<decimal> CalcularPrecoComDescontoAsync(Guid jogoId, DateTime data);
 }

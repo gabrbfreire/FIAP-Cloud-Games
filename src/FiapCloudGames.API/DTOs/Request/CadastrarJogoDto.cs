@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using FiapCloudGames.Core.Enums;
 
-namespace FiapCloudGames.API.DTOs;
+namespace FiapCloudGames.API.DTOs.Request;
 
 public class CadastrarJogoDto
 {
