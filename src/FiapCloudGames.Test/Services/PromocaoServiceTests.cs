@@ -6,7 +6,7 @@ using FiapCloudGames.Infra.Repositories;
 using Moq;
 using Xunit;
 
-namespace FiapCloudGames.Test;
+namespace FiapCloudGames.Test.Services;
 
 public class PromocaoServiceTests
 {
