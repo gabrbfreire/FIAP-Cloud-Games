@@ -48,17 +48,17 @@ Tech Challenge (FIAP Cloud Games)
 	
 ### Comandos:
 - Faça o pull do projeto:
-  	```bash
+```bash
 	git pull https://github.com/gabrbfreire/FIAP-Cloud-Games
-	```
--Navegue para a raiz do projeto e rode:
-
+```
+- Navegue para a raiz do projeto e rode:
+```bash
 	docker-compose up -d
-
--Navegue para a pasta src\FiapCloudGames.API	
-
+```
+- Navegue para a pasta src\FiapCloudGames.API	
+```bash
  	dotnet run
-
+```
 Apos inicializado o projeto ira gerar as tabelas atraves de migrations e criar o usuário admin inicial
 
 
