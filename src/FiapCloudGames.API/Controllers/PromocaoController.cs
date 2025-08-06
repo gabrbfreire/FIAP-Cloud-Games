@@ -51,19 +51,6 @@ public class PromocaoController : ControllerBase
         return NoContent();
     }
 
-    [HttpGet("{promocaoId:guid}/jogos")]
-    public async Task<IActionResult> BuscarJogosPorPromocao(Guid promocaoId)
-    {
-        var jogos = await _promocaoService.ListarJogosEmPromocaoAsync(promocaoId);
-
-        if (jogos == null) return NotFound();
-
-        var listaJogosDto = new List<JogoDTO>();
-        jogos.ToList().ForEach(j => listaJogosDto.Add(new JogoDTO(j)));
-
-        return Ok(listaJogosDto);
-    }
-
     [HttpGet("ativas")]
     public async Task<IActionResult> BuscarAtivas([FromQuery] DateTime? data = null)
     {

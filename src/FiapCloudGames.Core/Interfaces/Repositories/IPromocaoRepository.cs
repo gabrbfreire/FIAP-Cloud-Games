@@ -10,5 +10,4 @@ public interface IPromocaoRepository
     Task AtualizarAsync(Promocao promocao);
     Task RemoverAsync(Promocao promocao);
     Task<IEnumerable<Promocao>> BuscarAtivasPorDataAsync(DateTime dataReferencia);
-    Task<IEnumerable<Jogo>> BuscarJogosPorPromocaoIdAsync(Guid promocaoId);
 }

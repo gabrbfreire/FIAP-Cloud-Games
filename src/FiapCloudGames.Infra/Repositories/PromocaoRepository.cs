@@ -55,13 +55,4 @@ public class PromocaoRepository : IPromocaoRepository
                        p.DataFim.Date >= dataReferenciaSemHora)
             .ToListAsync();
     }
-
-    public async Task<IEnumerable<Jogo>> BuscarJogosPorPromocaoIdAsync(Guid promocaoId)
-    {
-        var promocao = await _context.Promocoes
-            .Include(p => p.Jogos)
-            .FirstOrDefaultAsync(p => p.Id == promocaoId);
-
-        return promocao?.Jogos ?? Enumerable.Empty<Jogo>();
-    }
 }

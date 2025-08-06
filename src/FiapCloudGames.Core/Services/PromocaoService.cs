@@ -74,11 +74,6 @@ public class PromocaoService : IPromocaoService
         }
     }
 
-    public async Task<IEnumerable<Jogo>> ListarJogosEmPromocaoAsync(Guid promocaoId)
-    {
-        return await _promocaoRepository.BuscarJogosPorPromocaoIdAsync(promocaoId);
-    }
-
     public async Task<bool> VerificarSePromocaoEstaAtivaAsync(Guid promocaoId, DateTime data)
     {
         var promocao = await _promocaoRepository.BuscarPorIdAsync(promocaoId);
