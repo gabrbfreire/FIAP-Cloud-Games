@@ -54,8 +54,10 @@ Tech Challenge (FIAP Cloud Games)
 -Navegue para a raiz do projeto e rode:
 
 	docker-compose up -d
-	dotnet run
-		
+
+-Navegue para a pasta src\FiapCloudGames.API	
+
+ 	dotnet run
 
 Apos inicializado o projeto ira gerar as tabelas atraves de migrations e criar o usuário admin inicial
 
