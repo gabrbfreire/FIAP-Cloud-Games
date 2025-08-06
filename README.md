@@ -59,7 +59,7 @@ docker-compose up -d
 ```bash
 dotnet run
 ```
-Apos inicializado o projeto ira gerar as tabelas atraves de migrations e criar o usuário admin inicial
+Apos inicializado o projeto ira gerar as tabelas através de migrations e criar o usuário admin inicial
 
 
 ### Dados usuário admin:
