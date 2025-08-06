@@ -1,7 +1,7 @@
 Grupo Gabriel
 
 Participante:
-	Gabriel Barros Freire - RM365936 - Gabriel Freire
+	RM365936 - Gabriel Barros Freire - Gabriel Freire
 
 Documentação
 	https://github.com/gabrbfreire/FIAP-Cloud-Games/blob/main/README.md

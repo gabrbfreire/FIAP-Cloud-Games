@@ -111,13 +111,16 @@ public class JogoServiceTests
     }
 
     [Fact]
-    public async Task RemoverAsync_QuandoJogoNaoExiste_DeveLancarExcecao()
+    public async Task RemoverAsync_QuandoJogoNaoExiste_DeveRetornarFalse()
     {
         // Arrange
         _mockRepo.Setup(x => x.BuscarPorIdAsync(It.IsAny<Guid>())).ReturnsAsync((Jogo?)null);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.RemoverAsync(Guid.NewGuid()));
+        // Act
+        var resultado = await _service.RemoverAsync(Guid.NewGuid());
+
+        // Assert
+        Assert.False(resultado);
     }
 
     [Fact]
