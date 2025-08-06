@@ -42,7 +42,7 @@ public class AuthController : ControllerBase
         if (signup != null)
             return CreatedAtAction(nameof(Signup), null);
         else
-            return BadRequest("User already exists");
+            return BadRequest("E-mail ou senha inválidos");
     }
 
     [HttpPost("login")]
@@ -56,7 +56,7 @@ public class AuthController : ControllerBase
                 AccessToken = tokenInfo.Token
             });
         else
-            return BadRequest("Invalid email or password");
+            return BadRequest("E-mail ou senha inválidos");
     }
 
     [Authorize(Roles = Roles.Admin)]
@@ -68,6 +68,6 @@ public class AuthController : ControllerBase
         if (tokenInfo != null)
             return Ok();
         else
-            return BadRequest("Invalid email");
+            return BadRequest("E-mail inválido.");
     }
 }

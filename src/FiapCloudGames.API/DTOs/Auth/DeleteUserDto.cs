@@ -6,6 +6,6 @@ public class DeleteUserDto
 {
     [Required]
     [MaxLength(30)]
-    [EmailAddress]
+    [EmailAddress(ErrorMessage = "E-mail inválido.")]
     public string Email { get; set; } = string.Empty;
 }
