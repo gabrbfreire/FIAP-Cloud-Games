@@ -60,7 +60,7 @@ public class AuthController : ControllerBase
     }
 
     [Authorize(Roles = Roles.Admin)]
-    [HttpDelete("delete")]
+    [HttpDelete]
     public async Task<IActionResult> Delete(DeleteUserDto dto)
     {
         var tokenInfo = await _authService.DeleteAsync(dto.Email);

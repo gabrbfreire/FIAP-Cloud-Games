@@ -84,4 +84,20 @@ public class PromocaoService : IPromocaoService
         var promocao = await _promocaoRepository.BuscarPorIdAsync(promocaoId);
         return promocao?.EstaAtiva(data) ?? false;
     }
+
+    public async Task<bool> RemoverPromocaoAsync(Guid id)
+    {
+        var promocao = await _promocaoRepository.BuscarPorIdAsync(id);
+        if (promocao == null)
+            return false;
+
+        foreach (var jogo in promocao.Jogos.ToList())
+        {
+            jogo.Promocoes.Remove(promocao);
+            await _jogoRepository.AtualizarAsync(jogo);
+        }
+
+        await _promocaoRepository.RemoverAsync(promocao);
+        return true;
+    }
 }

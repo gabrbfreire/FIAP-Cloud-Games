@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FiapCloudGames.API.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class JogoController : ControllerBase
@@ -46,5 +47,16 @@ public class JogoController : ControllerBase
         jogos.ToList().ForEach(j => listaJogosDto.Add(new JogoDTO(j)));
 
         return Ok(listaJogosDto);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> RemoverJogo(Guid id)
+    {
+        var removidoComSucesso = await _jogoService.RemoverAsync(id);
+
+        if (!removidoComSucesso) return NotFound();
+
+        return NoContent();
     }
 }

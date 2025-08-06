@@ -8,6 +8,6 @@ public interface IJogoService
     Task<Jogo?> BuscarPorIdAsync(Guid id);
     Task<Jogo> AdicionarAsync(Jogo jogo);
     Task AtualizarAsync(Jogo jogo);
-    Task RemoverAsync(Guid id);
+    Task<bool> RemoverAsync(Guid id);
     Task<IEnumerable<Jogo>> BuscarJogosComPrecoDeDescontoAsync(DateTime dataReferencia);
 }

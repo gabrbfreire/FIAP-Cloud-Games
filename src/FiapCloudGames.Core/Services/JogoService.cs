@@ -34,13 +34,14 @@ public class JogoService : IJogoService
         await _jogoRepository.AtualizarAsync(jogo);
     }
 
-    public async Task RemoverAsync(Guid id)
+    public async Task<bool> RemoverAsync(Guid id)
     {
         var jogo = await _jogoRepository.BuscarPorIdAsync(id);
         if (jogo is null)
-            throw new KeyNotFoundException("Jogo não encontrado.");
+            return false;
 
         await _jogoRepository.RemoverAsync(jogo);
+        return true;
     }
 
     public async Task<IEnumerable<Jogo>> BuscarJogosComPrecoDeDescontoAsync(DateTime dataReferencia)
