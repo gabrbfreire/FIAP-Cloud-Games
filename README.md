@@ -12,7 +12,6 @@ Tech Challenge (FIAP Cloud Games)
 - Testes unitários: Utilizando Moq e xUnit
 - Documentação: Utilizando Swagger
 - Containerização: Utilizando docker-compose para inicialização do banco de dados
-- Testes unitários: Utilizando Moq e xUnit
 
 ## Estrutura do projeto:
 
