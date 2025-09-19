@@ -38,8 +38,8 @@ jobs:
       - name: Deploy no Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
-            --application-name your-app-name \
-            --environment-name your-env-name \
+            --application-name FIAP-Cloud-Games \
+            --environment-name dev \
             --version-label latest \
             --region us-east-1
         env:
