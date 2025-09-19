@@ -22,6 +22,10 @@ jobs:
       - name: Fazer login no Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: sa-east-1  # ⬅️ ajuste para sua região correta
 
       - name: Build da imagem Docker
         run: |
@@ -41,7 +45,7 @@ jobs:
             --application-name FIAP-Cloud-Games \
             --environment-name dev \
             --version-label latest \
-            --region us-east-1
+            --region sa-east-1
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
