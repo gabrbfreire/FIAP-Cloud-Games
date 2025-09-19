@@ -15,6 +15,7 @@ services:
     build:
       context: .
       dockerfile: ./src/FiapCloudGames.API/Dockerfile
+    image: fcg-app
     container_name: fiapcloudgames-api
     ports:
       - "5000:5000"
