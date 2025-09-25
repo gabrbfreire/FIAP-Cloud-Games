@@ -23,7 +23,7 @@ services:
       - postgres
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=fiapcloudgames;Username=admin;Password=admin123
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=fiapcloudgames;Username=adminadmin;Password=admin123
       - ASPNETCORE_URLS=http://+:5000
 
 volumes:
