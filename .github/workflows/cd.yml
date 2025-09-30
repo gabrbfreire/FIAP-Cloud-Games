@@ -39,13 +39,31 @@ jobs:
         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/fcg-app:latest
 
+      - name: Criar Dockerrun.aws.json dinamicamente
+        run: |
+          echo '{
+            "AWSEBDockerrunVersion": 1,
+            "Image": {
+              "Name": "${{ steps.login-ecr.outputs.registry }}/fcg-app:latest",
+              "Update": "true"
+            },
+            "Ports": [
+              {
+                "ContainerPort": "80"
+              }
+            ]
+          }' > Dockerrun.aws.json
+
+      - name: Criar zip de deploy
+        run: zip -r deploy.zip Dockerrun.aws.json
+
       - name: Criar nova versão no Beanstalk
         run: |
-          zip -r deploy.zip Dockerrun.aws.json
+          aws s3 cp deploy.zip s3://seu-bucket-s3/deploy-${{ github.run_number }}.zip
           aws elasticbeanstalk create-application-version \
             --application-name FIAP-Cloud-Games \
             --version-label fcg-${{ github.run_number }} \
-            --source-bundle S3Bucket="seu-bucket-s3",S3Key="deploy.zip" \
+            --source-bundle S3Bucket="seu-bucket-s3",S3Key="deploy-${{ github.run_number }}.zip" \
             --region sa-east-1
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
