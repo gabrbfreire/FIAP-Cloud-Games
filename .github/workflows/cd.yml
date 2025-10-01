@@ -81,7 +81,7 @@ jobs:
         run: |
           aws elasticbeanstalk update-environment \
             --application-name FiapCloudGames \
-            --environment-name fcg-dev \
+            --environment-name FiapCloudGames-env \
             --version-label fcg-${{ github.run_number }} \
             --region sa-east-1
         env:
