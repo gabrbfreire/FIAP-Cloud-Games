@@ -68,7 +68,7 @@ jobs:
       - name: Criar nova versão no Beanstalk
         run: |
           aws elasticbeanstalk create-application-version \
-            --application-name FIAP-Cloud-Games \
+            --application-name FiapCloudGames \
             --version-label fcg-${{ github.run_number }} \
             --source-bundle S3Bucket="fcg-deployments",S3Key="deploy-${{ github.run_number }}.zip" \
             --region sa-east-1
@@ -80,11 +80,4 @@ jobs:
       - name: Atualizar o ambiente no Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
-            --application-name FIAP-Cloud-Games \
-            --environment-name fcg-dev \
-            --version-label fcg-${{ github.run_number }} \
-            --region sa-east-1
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: sa-east-1
+            --application-name FiapCloudGames \
