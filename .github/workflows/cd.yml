@@ -57,13 +57,20 @@ jobs:
       - name: Criar zip de deploy
         run: zip -r deploy.zip Dockerrun.aws.json
 
+      - name: Upload do pacote para o S3
+        run: |
+          aws s3 cp deploy.zip s3://fcg-deployments/deploy-${{ github.run_number }}.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: sa-east-1
+
       - name: Criar nova versão no Beanstalk
         run: |
-          aws s3 cp deploy.zip s3://seu-bucket-s3/deploy-${{ github.run_number }}.zip
           aws elasticbeanstalk create-application-version \
             --application-name FIAP-Cloud-Games \
             --version-label fcg-${{ github.run_number }} \
-            --source-bundle S3Bucket="seu-bucket-s3",S3Key="deploy-${{ github.run_number }}.zip" \
+            --source-bundle S3Bucket="fcg-deployments",S3Key="deploy-${{ github.run_number }}.zip" \
             --region sa-east-1
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
