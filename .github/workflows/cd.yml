@@ -1,4 +1,4 @@
-name: CD Pipeline
+name: CD Pipeline - Single Container
 
 on:
   push:
@@ -29,27 +29,37 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Atualizar docker-compose.yml com tag única
+      - name: Build da imagem Docker
         run: |
-          TAG=${GITHUB_RUN_NUMBER}
-          sed -i "s|image:.*|image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}|g" docker-compose.yml
+          docker build -t fcg-app .
 
-      - name: Build e push das imagens
+      - name: Tag da imagem com ECR
         run: |
-          docker compose build
-          docker compose push
+          docker tag fcg-app:latest ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_RUN_NUMBER}
 
-      - name: Criar Dockerrun.aws.json para EB
+      - name: Push da imagem para ECR
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_RUN_NUMBER}
+
+      - name: Criar Dockerrun.aws.json (v1)
         run: |
           echo '{
-            "AWSEBDockerrunVersion": 2
+            "AWSEBDockerrunVersion": 1,
+            "Image": {
+              "Name": "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_RUN_NUMBER}",
+              "Update": "true"
+            },
+            "Ports": [
+              {
+                "ContainerPort": 80
+              }
+            ]
           }' > Dockerrun.aws.json
 
       - name: Criar pacote de deploy
-        run: |
-          zip -r deploy.zip Dockerrun.aws.json docker-compose.yml
+        run: zip -r deploy.zip Dockerrun.aws.json
 
-      - name: Upload do pacote para o S3
+      - name: Upload do pacote para S3
         run: |
           aws s3 cp deploy.zip s3://fcg-deployments/deploy-${GITHUB_RUN_NUMBER}.zip
 
@@ -63,5 +73,4 @@ jobs:
       - name: Atualizar ambiente no Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
-            --environment-name FiapCloudGames-env \
-            --version-label fcg-${GITHUB_RUN_NUMBER}
+            --environment-nam
