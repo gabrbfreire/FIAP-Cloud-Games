@@ -10,6 +10,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: sa-east-1
+      ECR_REPOSITORY: fcg-app
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v2
@@ -19,24 +23,45 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: sa-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build e Push da Imagem com Docker Compose
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Atualizar docker-compose.yml com tag única
+        run: |
+          TAG=${GITHUB_RUN_NUMBER}
+          sed -i "s|image:.*|image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}|g" docker-compose.yml
+
+      - name: Build e push das imagens
         run: |
           docker compose build
           docker compose push
 
-      - name: Criar nova versão no Elastic Beanstalk
+      - name: Criar Dockerrun.aws.json para EB
+        run: |
+          echo '{
+            "AWSEBDockerrunVersion": 2
+          }' > Dockerrun.aws.json
+
+      - name: Criar pacote de deploy
         run: |
           zip -r deploy.zip Dockerrun.aws.json docker-compose.yml
-          aws s3 cp deploy.zip s3://fcg-deployments/deploy-${{ github.run_number }}.zip
+
+      - name: Upload do pacote para o S3
+        run: |
+          aws s3 cp deploy.zip s3://fcg-deployments/deploy-${GITHUB_RUN_NUMBER}.zip
+
+      - name: Criar nova versão no Elastic Beanstalk
+        run: |
           aws elasticbeanstalk create-application-version \
             --application-name FiapCloudGames \
-            --version-label fcg-${{ github.run_number }} \
-            --source-bundle S3Bucket=fcg-deployments,S3Key=deploy-${{ github.run_number }}.zip
+            --version-label fcg-${GITHUB_RUN_NUMBER} \
+            --source-bundle S3Bucket=fcg-deployments,S3Key=deploy-${GITHUB_RUN_NUMBER}.zip
 
       - name: Atualizar ambiente no Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
             --environment-name FiapCloudGames-env \
-            --version-label fcg-${{ github.run_number }}
+            --version-label fcg-${GITHUB_RUN_NUMBER}
