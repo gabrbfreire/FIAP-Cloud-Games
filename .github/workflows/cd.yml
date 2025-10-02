@@ -31,25 +31,25 @@ jobs:
         run: |
           docker-compose -f docker-compose.yml build
 
-      - name: Tag da imagem com ECR
+      - name: Tag da imagem com ECR (usando run_number)
         run: |
-          docker tag fcg-app:latest ${{ steps.login-ecr.outputs.registry }}/fcg-app:latest
+          docker tag fcg-app:latest ${{ steps.login-ecr.outputs.registry }}/fcg-app:${{ github.run_number }}
 
       - name: Push da imagem para o ECR
         run: |
-          docker push ${{ steps.login-ecr.outputs.registry }}/fcg-app:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/fcg-app:${{ github.run_number }}
 
       - name: Criar Dockerrun.aws.json dinamicamente
         run: |
           echo '{
             "AWSEBDockerrunVersion": 1,
             "Image": {
-              "Name": "${{ steps.login-ecr.outputs.registry }}/fcg-app:latest",
+              "Name": "${{ steps.login-ecr.outputs.registry }}/fcg-app:${{ github.run_number }}",
               "Update": "true"
             },
             "Ports": [
               {
-                "ContainerPort": "80"
+                "ContainerPort": 80
               }
             ]
           }' > Dockerrun.aws.json
