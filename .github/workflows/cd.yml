@@ -1,4 +1,4 @@
-name: CD Pipeline - Multi-container
+name: CD Pipeline - Docker Compose
 
 on:
   push:
@@ -41,7 +41,7 @@ jobs:
           docker compose push
 
       - name: Criar pacote de deploy
-        run: zip -r deploy.zip Dockerrun.aws.json docker-compose.yml
+        run: zip deploy.zip docker-compose.yml
 
       - name: Upload do pacote para o S3
         run: aws s3 cp deploy.zip s3://fcg-deployments/deploy-${GITHUB_RUN_NUMBER}.zip
