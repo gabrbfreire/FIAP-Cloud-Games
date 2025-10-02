@@ -39,9 +39,6 @@ jobs:
           docker compose build
           docker compose push
 
-      - name: Criar Dockerrun.aws.json (v3)
-        run: echo '{"AWSEBDockerrunVersion": 3}' > Dockerrun.aws.json
-
       - name: Criar pacote de deploy
         run: zip -r deploy.zip Dockerrun.aws.json docker-compose.yml
 
