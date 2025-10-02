@@ -14,57 +14,29 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v2
 
-      - name: Fazer login no Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: sa-east-1
+      - name: Configurar AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: sa-east-1
 
-      - name: Build da imagem e push
+      - name: Build e Push da Imagem com Docker Compose
         run: |
-          docker-compose build
-          docker-compose push
+          docker compose build
+          docker compose push
 
-      - name: Criar Dockerrun.aws.json
-        run: |
-          echo '{
-            "AWSEBDockerrunVersion": 2
-          }' > Dockerrun.aws.json
-
-      - name: Criar pacote de deploy
+      - name: Criar nova versão no Elastic Beanstalk
         run: |
           zip -r deploy.zip Dockerrun.aws.json docker-compose.yml
-
-      - name: Upload do pacote para o S3
-        run: |
           aws s3 cp deploy.zip s3://fcg-deployments/deploy-${{ github.run_number }}.zip
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: sa-east-1
-
-      - name: Criar nova versão no Beanstalk
-        run: |
           aws elasticbeanstalk create-application-version \
             --application-name FiapCloudGames \
             --version-label fcg-${{ github.run_number }} \
-            --source-bundle S3Bucket="fcg-deployments",S3Key="deploy-${{ github.run_number }}.zip" \
-            --region sa-east-1
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: sa-east-1
+            --source-bundle S3Bucket=fcg-deployments,S3Key=deploy-${{ github.run_number }}.zip
 
-      - name: Atualizar o ambiente
+      - name: Atualizar ambiente no Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
-            --application-name FiapCloudGames \
             --environment-name FiapCloudGames-env \
-            --version-label fcg-${{ github.run_number }} \
-            --region sa-east-1
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: sa-east-1
+            --version-label fcg-${{ github.run_number }}
