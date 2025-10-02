@@ -33,7 +33,7 @@ jobs:
       - name: Build e push da imagem
         run: |
           TAG=${GITHUB_RUN_NUMBER}
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG} .
+          docker build -f src/FiapCloudGames.API/Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG} .
           docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}
 
       - name: Gerar Dockerrun.aws.json
