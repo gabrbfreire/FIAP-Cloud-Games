@@ -13,7 +13,7 @@ jobs:
     env:
       AWS_REGION: sa-east-1
       ECR_REPOSITORY: fcg-app
-      EB_ENVIRONMENT_NAME: FiapCloudGames-env-1
+      EB_ENVIRONMENT_NAME: FiapCloudGames-env-2
 
     steps:
       - name: Checkout do código
@@ -30,37 +30,18 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build e push da imagem
+      - name: Atualizar docker-compose.yml com tag única
         run: |
           TAG=${GITHUB_RUN_NUMBER}
-          docker build -f src/FiapCloudGames.API/Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG} .
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}
+          sed -i "s|image:.*|image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}|g" docker-compose.yml
 
-      - name: Gerar Dockerrun.aws.json
+      - name: Build e push das imagens
         run: |
-          TAG=${GITHUB_RUN_NUMBER}
-          cat > Dockerrun.aws.json <<EOL
-          {
-            "AWSEBDockerrunVersion": 2,
-            "containerDefinitions": [
-              {
-                "name": "fcg-app",
-                "image": "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}",
-                "essential": true,
-                "memory": 512,
-                "portMappings": [
-                  {
-                    "hostPort": 80,
-                    "containerPort": 5000
-                  }
-                ]
-              }
-            ]
-          }
-          EOL
+          docker compose build
+          docker compose push
 
       - name: Criar pacote de deploy
-        run: zip deploy.zip Dockerrun.aws.json
+        run: zip -r deploy.zip Dockerrun.aws.json docker-compose.yml
 
       - name: Upload do pacote para o S3
         run: aws s3 cp deploy.zip s3://fcg-deployments/deploy-${GITHUB_RUN_NUMBER}.zip
