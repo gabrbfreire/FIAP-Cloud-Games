@@ -13,6 +13,7 @@ jobs:
     env:
       AWS_REGION: sa-east-1
       ECR_REPOSITORY: fcg-app
+      EB_ENVIRONMENT_NAME: FiapCloudGames-env-1
 
     steps:
       - name: Checkout do código
@@ -39,6 +40,9 @@ jobs:
           docker compose build
           docker compose push
 
+      - name: Criar Dockerrun.aws.json (v3)
+        run: echo '{"AWSEBDockerrunVersion": 3}' > Dockerrun.aws.json
+
       - name: Criar pacote de deploy
         run: zip -r deploy.zip Dockerrun.aws.json docker-compose.yml
 
@@ -55,5 +59,5 @@ jobs:
       - name: Atualizar ambiente no Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
-            --environment-name FiapCloudGames-multi \
+            --environment-name ${{ env.EB_ENVIRONMENT_NAME }} \
             --version-label fcg-${GITHUB_RUN_NUMBER}
