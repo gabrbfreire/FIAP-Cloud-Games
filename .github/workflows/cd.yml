@@ -1,4 +1,4 @@
-name: CD Pipeline - Single Container
+name: CD Pipeline - Multi-container
 
 on:
   push:
@@ -29,39 +29,24 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build da imagem Docker
+      - name: Atualizar docker-compose.yml com tag única
         run: |
-          docker build -t fcg-app .
+          TAG=${GITHUB_RUN_NUMBER}
+          sed -i "s|image:.*|image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}|g" docker-compose.yml
 
-      - name: Tag da imagem com ECR
+      - name: Build e push das imagens
         run: |
-          docker tag fcg-app:latest ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_RUN_NUMBER}
+          docker compose build
+          docker compose push
 
-      - name: Push da imagem para ECR
-        run: |
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_RUN_NUMBER}
-
-      - name: Criar Dockerrun.aws.json (v1)
-        run: |
-          echo '{
-            "AWSEBDockerrunVersion": 1,
-            "Image": {
-              "Name": "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_RUN_NUMBER}",
-              "Update": "true"
-            },
-            "Ports": [
-              {
-                "ContainerPort": 80
-              }
-            ]
-          }' > Dockerrun.aws.json
+      - name: Criar Dockerrun.aws.json (v3)
+        run: echo '{"AWSEBDockerrunVersion": 3}' > Dockerrun.aws.json
 
       - name: Criar pacote de deploy
-        run: zip -r deploy.zip Dockerrun.aws.json
+        run: zip -r deploy.zip Dockerrun.aws.json docker-compose.yml
 
-      - name: Upload do pacote para S3
-        run: |
-          aws s3 cp deploy.zip s3://fcg-deployments/deploy-${GITHUB_RUN_NUMBER}.zip
+      - name: Upload do pacote para o S3
+        run: aws s3 cp deploy.zip s3://fcg-deployments/deploy-${GITHUB_RUN_NUMBER}.zip
 
       - name: Criar nova versão no Elastic Beanstalk
         run: |
@@ -73,4 +58,5 @@ jobs:
       - name: Atualizar ambiente no Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
-            --environment-nam
+            --environment-name FiapCloudGames-multi \
+            --version-label fcg-${GITHUB_RUN_NUMBER}
