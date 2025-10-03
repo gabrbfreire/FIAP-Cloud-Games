@@ -30,18 +30,46 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Atualizar docker-compose.yml com tag única
+      - name: Build e push da imagem API
         run: |
           TAG=${GITHUB_RUN_NUMBER}
-          sed -i "s|image:.*|image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}|g" docker-compose.yml
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG} -f src/FiapCloudGames.API/Dockerfile .
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}
 
-      - name: Build e push das imagens
+      - name: Gerar docker-compose.deploy.yml
         run: |
-          docker compose build
-          docker compose push
+          TAG=${GITHUB_RUN_NUMBER}
+          cat > docker-compose.deploy.yml <<EOL
+          version: '3'
+          services:
+            postgres:
+              image: postgres:15
+              environment:
+                POSTGRES_USER: admin
+                POSTGRES_PASSWORD: admin123
+                POSTGRES_DB: fiapcloudgames
+              ports:
+                - "5432:5432"
+              volumes:
+                - postgres_data:/var/lib/postgresql/data
+
+            api:
+              image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}
+              ports:
+                - "5000:5000"
+              depends_on:
+                - postgres
+              environment:
+                - ASPNETCORE_ENVIRONMENT=Production
+                - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=fiapcloudgames;Username=admin;Password=admin123
+                - ASPNETCORE_URLS=http://+:5000
+
+          volumes:
+            postgres_data:
+          EOL
 
       - name: Criar pacote de deploy
-        run: zip deploy.zip docker-compose.yml
+        run: zip deploy.zip docker-compose.deploy.yml
 
       - name: Upload do pacote para o S3
         run: aws s3 cp deploy.zip s3://fcg-deployments/deploy-${GITHUB_RUN_NUMBER}.zip
