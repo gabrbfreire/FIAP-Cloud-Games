@@ -1,4 +1,4 @@
-name: CD Pipeline - Docker Compose
+name: CD Pipeline - Multi-container EB
 
 on:
   push:
@@ -36,40 +36,47 @@ jobs:
           docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG} -f src/FiapCloudGames.API/Dockerfile .
           docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}
 
-      - name: Gerar docker-compose.deploy.yml
+      - name: Gerar Dockerrun.aws.json
         run: |
           TAG=${GITHUB_RUN_NUMBER}
-          cat > docker-compose.deploy.yml <<EOL
-          version: '3'
-          services:
-            postgres:
-              image: postgres:15
-              environment:
-                POSTGRES_USER: admin
-                POSTGRES_PASSWORD: admin123
-                POSTGRES_DB: fiapcloudgames
-              ports:
-                - "5432:5432"
-              volumes:
-                - postgres_data:/var/lib/postgresql/data
-
-            api:
-              image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}
-              ports:
-                - "5000:5000"
-              depends_on:
-                - postgres
-              environment:
-                - ASPNETCORE_ENVIRONMENT=Production
-                - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=fiapcloudgames;Username=admin;Password=admin123
-                - ASPNETCORE_URLS=http://+:5000
-
-          volumes:
-            postgres_data:
+          cat > Dockerrun.aws.json <<EOL
+          {
+            "AWSEBDockerrunVersion": 2,
+            "containerDefinitions": [
+              {
+                "name": "api",
+                "image": "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}",
+                "essential": true,
+                "memory": 512,
+                "portMappings": [
+                  { "hostPort": 80, "containerPort": 5000 }
+                ],
+                "environment": [
+                  { "name": "ASPNETCORE_ENVIRONMENT", "value": "Production" },
+                  { "name": "ConnectionStrings__DefaultConnection", "value": "Host=postgres;Port=5432;Database=fiapcloudgames;Username=admin;Password=admin123" }
+                ],
+                "dependsOn": ["postgres"]
+              },
+              {
+                "name": "postgres",
+                "image": "postgres:15",
+                "essential": true,
+                "memory": 512,
+                "environment": [
+                  { "name": "POSTGRES_USER", "value": "admin" },
+                  { "name": "POSTGRES_PASSWORD", "value": "admin123" },
+                  { "name": "POSTGRES_DB", "value": "fiapcloudgames" }
+                ],
+                "portMappings": [
+                  { "hostPort": 5432, "containerPort": 5432 }
+                ]
+              }
+            ]
+          }
           EOL
 
       - name: Criar pacote de deploy
-        run: zip deploy.zip docker-compose.deploy.yml
+        run: zip deploy.zip Dockerrun.aws.json
 
       - name: Upload do pacote para o S3
         run: aws s3 cp deploy.zip s3://fcg-deployments/deploy-${GITHUB_RUN_NUMBER}.zip
