@@ -1,4 +1,4 @@
-name: CD Pipeline - Multi-container EB
+name: CD Pipeline - Elastic Beanstalk (.NET + Aurora)
 
 on:
   push:
@@ -14,11 +14,14 @@ jobs:
       AWS_REGION: sa-east-1
       ECR_REPOSITORY: fcg-app
       EB_ENVIRONMENT_NAME: FiapCloudGames-env-2
+      EB_APPLICATION_NAME: FiapCloudGames
 
     steps:
+      # 1️⃣ Checkout do código
       - name: Checkout do código
         uses: actions/checkout@v2
 
+      # 2️⃣ Configurar credenciais da AWS
       - name: Configurar AWS CLI
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -26,70 +29,61 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # 3️⃣ Login no Amazon ECR
       - name: Login no Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      # 4️⃣ Build e push da imagem Docker
       - name: Build e push da imagem API
         run: |
           TAG=${GITHUB_RUN_NUMBER}
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG} -f src/FiapCloudGames.API/Dockerfile .
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}
+          echo "Construindo imagem: $IMAGE_URI"
+          docker build -t $IMAGE_URI -f src/FiapCloudGames.API/Dockerfile .
+          docker push $IMAGE_URI
 
+      # 5️⃣ Gerar Dockerrun.aws.json (versão 1 — single container)
       - name: Gerar Dockerrun.aws.json
         run: |
           TAG=${GITHUB_RUN_NUMBER}
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}
           cat > Dockerrun.aws.json <<EOL
           {
-            "AWSEBDockerrunVersion": 2,
-            "containerDefinitions": [
-              {
-                "name": "api",
-                "image": "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${TAG}",
-                "essential": true,
-                "memory": 512,
-                "portMappings": [
-                  { "hostPort": 80, "containerPort": 5000 }
-                ],
-                "environment": [
-                  { "name": "ASPNETCORE_ENVIRONMENT", "value": "Production" },
-                  { "name": "ConnectionStrings__DefaultConnection", "value": "Host=postgres;Port=5432;Database=fiapcloudgames;Username=admin;Password=admin123" }
-                ],
-                "dependsOn": ["postgres"]
-              },
-              {
-                "name": "postgres",
-                "image": "postgres:15",
-                "essential": true,
-                "memory": 512,
-                "environment": [
-                  { "name": "POSTGRES_USER", "value": "admin" },
-                  { "name": "POSTGRES_PASSWORD", "value": "admin123" },
-                  { "name": "POSTGRES_DB", "value": "fiapcloudgames" }
-                ],
-                "portMappings": [
-                  { "hostPort": 5432, "containerPort": 5432 }
-                ]
-              }
+            "AWSEBDockerrunVersion": 1,
+            "Image": {
+              "Name": "${IMAGE_URI}",
+              "Update": "true"
+            },
+            "Ports": [
+              { "ContainerPort": 5000, "HostPort": 80 }
+            ],
+            "Environment": [
+              { "Name": "ASPNETCORE_ENVIRONMENT", "Value": "Production" },
+              { "Name": "ConnectionStrings__DefaultConnection", "Value": "Host=${{ secrets.DB_HOST }};Port=5432;Database=${{ secrets.DB_NAME }};Username=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }}" }
             ]
           }
           EOL
 
+      # 6️⃣ Criar pacote de deploy
       - name: Criar pacote de deploy
         run: zip deploy.zip Dockerrun.aws.json
 
+      # 7️⃣ Upload para o S3 (bucket de deploy)
       - name: Upload do pacote para o S3
         run: aws s3 cp deploy.zip s3://fcg-deployments/deploy-${GITHUB_RUN_NUMBER}.zip
 
+      # 8️⃣ Criar nova versão no Elastic Beanstalk
       - name: Criar nova versão no Elastic Beanstalk
         run: |
           aws elasticbeanstalk create-application-version \
-            --application-name FiapCloudGames \
+            --application-name ${{ env.EB_APPLICATION_NAME }} \
             --version-label fcg-${GITHUB_RUN_NUMBER} \
             --source-bundle S3Bucket=fcg-deployments,S3Key=deploy-${GITHUB_RUN_NUMBER}.zip
 
+      # 9️⃣ Atualizar o ambiente no Elastic Beanstalk
       - name: Atualizar ambiente no Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
             --environment-name ${{ env.EB_ENVIRONMENT_NAME }} \
-            --version-label fcg-${GITHUB_RUN_NUMBER}
+            --version-label fcg-${GITHUB_RUN_NUMBER}}
