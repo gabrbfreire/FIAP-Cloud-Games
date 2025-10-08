@@ -1,17 +1,17 @@
-name: CI/CD - FiapCloudGames
+name: CI/CD - Fiap Cloud Games
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   REGISTRY_NAME: fcgregistrygabriel
   IMAGE_NAME: fiapcloudgames
   RESOURCE_GROUP: fiapcloudgames-rg
   CONTAINERAPP_NAME: fiapcloudgames-api
-  ENVIRONMENT_NAME: fiapcloudgames-env
+  ENVIRONMENT: fiapcloudgames-env
 
 jobs:
   build-and-deploy:
@@ -26,38 +26,22 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login no Azure Container Registry
+      - name: Login no ACR
         run: |
-          az acr login --name $REGISTRY_NAME
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
-      - name: Build e Push da imagem Docker para o ACR
+      - name: Build da imagem Docker
         run: |
-          IMAGE_TAG=${{ github.run_number }}
-          docker build -t $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:$IMAGE_TAG -f src/FiapCloudGames.API/Dockerfile .
-          docker push $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:$IMAGE_TAG
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          docker build -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest .
+
+      - name: Push da imagem para o ACR
+        run: |
+          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
 
       - name: Deploy no Azure Container Apps
         run: |
-          ACR_USERNAME=$(az acr credential show -n $REGISTRY_NAME --query "username" -o tsv)
-          ACR_PASSWORD=$(az acr credential show -n $REGISTRY_NAME --query "passwords[0].value" -o tsv)
-          
           az containerapp update \
-            --name $CONTAINERAPP_NAME \
-            --resource-group $RESOURCE_GROUP \
-            --image $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:${{ env.IMAGE_TAG }} \
-            --registry-server $REGISTRY_NAME.azurecr.io \
-            --registry-username $ACR_USERNAME \
-            --registry-password $ACR_PASSWORD \
-            --cpu 0.5 --memory 1.0Gi \
-            --ingress external --target-port 5000 || \
-          az containerapp create \
-            --name $CONTAINERAPP_NAME \
-            --resource-group $RESOURCE_GROUP \
-            --environment $ENVIRONMENT_NAME \
-            --image $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:${{ env.IMAGE_TAG }} \
-            --registry-server $REGISTRY_NAME.azurecr.io \
-            --registry-username $ACR_USERNAME \
-            --registry-password $ACR_PASSWORD \
-            --cpu 0.5 --memory 1.0Gi \
-            --ingress external --target-port 5000
+            --name ${{ env.CONTAINERAPP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
+            --set-env-vars ASPNETCORE_ENVIRONMENT=Production
