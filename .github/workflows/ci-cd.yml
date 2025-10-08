@@ -12,8 +12,6 @@ env:
   RESOURCE_GROUP: fiapcloudgames-rg
   CONTAINERAPP_NAME: fiapcloudgames-api
   ENVIRONMENT: fiapcloudgames-env
-  ACR_USERNAME: fcgregistrygabriel
-  ACR_PASSWORD: TUNrbcUq/o4q6igPXyIVaw+qx0gkD1R/OiVdOLP2j4+ACRBgGUsb
 
 jobs:
   build-and-deploy:
