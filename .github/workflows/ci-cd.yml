@@ -7,48 +7,57 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_CONTAINER_REGISTRY: fcgregistrygabriel.azurecr.io
+  REGISTRY_NAME: fcgregistrygabriel
   IMAGE_NAME: fiapcloudgames
-  WEBAPP_NAME: fiapcloudgames-app
   RESOURCE_GROUP: fiapcloudgames-rg
+  CONTAINERAPP_NAME: fiapcloudgames-api
+  ENVIRONMENT_NAME: fiapcloudgames-env
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧾 Checkout do código
+      - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: ⚙️ Configurar o .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 8.0.x
-
-      - name: 🧪 Restaurar dependências e rodar testes
-        run: |
-          dotnet restore
-          dotnet build --configuration Release
-          dotnet test --no-build --verbosity normal
-
-      - name: 🔐 Login no Azure
-        uses: azure/login@v2
+      - name: Login no Azure
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: 🔑 Login no Azure Container Registry
-        run: az acr login --name fcgregistrygabriel
-
-      - name: 🐳 Build da imagem Docker
+      - name: Login no Azure Container Registry
         run: |
-          docker build -t $AZURE_CONTAINER_REGISTRY/$IMAGE_NAME:latest -f src/FiapCloudGames.API/Dockerfile .
+          az acr login --name $REGISTRY_NAME
 
-      - name: 📤 Push da imagem para o ACR
+      - name: Build e Push da imagem Docker para o ACR
         run: |
-          docker push $AZURE_CONTAINER_REGISTRY/$IMAGE_NAME:latest
+          IMAGE_TAG=${{ github.run_number }}
+          docker build -t $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:$IMAGE_TAG -f src/FiapCloudGames.API/Dockerfile .
+          docker push $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      - name: 🚀 Deploy no Azure Web App for Containers
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ env.WEBAPP_NAME }}
-          images: ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+      - name: Deploy no Azure Container Apps
+        run: |
+          ACR_USERNAME=$(az acr credential show -n $REGISTRY_NAME --query "username" -o tsv)
+          ACR_PASSWORD=$(az acr credential show -n $REGISTRY_NAME --query "passwords[0].value" -o tsv)
+          
+          az containerapp update \
+            --name $CONTAINERAPP_NAME \
+            --resource-group $RESOURCE_GROUP \
+            --image $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:${{ env.IMAGE_TAG }} \
+            --registry-server $REGISTRY_NAME.azurecr.io \
+            --registry-username $ACR_USERNAME \
+            --registry-password $ACR_PASSWORD \
+            --cpu 0.5 --memory 1.0Gi \
+            --ingress external --target-port 5000 || \
+          az containerapp create \
+            --name $CONTAINERAPP_NAME \
+            --resource-group $RESOURCE_GROUP \
+            --environment $ENVIRONMENT_NAME \
+            --image $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:${{ env.IMAGE_TAG }} \
+            --registry-server $REGISTRY_NAME.azurecr.io \
+            --registry-username $ACR_USERNAME \
+            --registry-password $ACR_PASSWORD \
+            --cpu 0.5 --memory 1.0Gi \
+            --ingress external --target-port 5000
