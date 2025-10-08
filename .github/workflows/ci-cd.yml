@@ -27,7 +27,8 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Login no ACR
-        run: echo "${{ env.ACR_PASSWORD }}" | docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ env.ACR_USERNAME }} --password-stdin
+        run: |
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u "${{ secrets.ACR_USERNAME }}" --password-stdin
 
       - name: Build da imagem Docker
         run: docker build -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest -f src/FiapCloudGames.API/Dockerfile .
@@ -42,8 +43,8 @@ jobs:
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
             --registry-server ${{ env.REGISTRY_NAME }}.azurecr.io \
-            --registry-username ${{ env.ACR_USERNAME }} \
-            --registry-password ${{ env.ACR_PASSWORD }} \
+            --registry-username "${{ secrets.ACR_USERNAME }}" \
+            --registry-password "${{ secrets.ACR_PASSWORD }}" \
             --set-env-vars ASPNETCORE_ENVIRONMENT=Production
 
       - name: Obter URL público do Container App
