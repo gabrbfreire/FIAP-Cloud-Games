@@ -12,6 +12,8 @@ env:
   RESOURCE_GROUP: fiapcloudgames-rg
   CONTAINERAPP_NAME: fiapcloudgames-api
   ENVIRONMENT: fiapcloudgames-env
+  ACR_USERNAME: fcgregistrygabriel
+  ACR_PASSWORD: TUNrbcUq/o4q6igPXyIVaw+qx0gkD1R/OiVdOLP2j4+ACRBgGUsb
 
 jobs:
   build-and-deploy:
@@ -27,16 +29,13 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Login no ACR
-        run: |
-          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
+        run: echo "${{ env.ACR_PASSWORD }}" | docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ env.ACR_USERNAME }} --password-stdin
 
       - name: Build da imagem Docker
-        run: |
-          docker build -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest -f src/FiapCloudGames.API/Dockerfile .
+        run: docker build -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest -f src/FiapCloudGames.API/Dockerfile .
 
       - name: Push da imagem para o ACR
-        run: |
-          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+        run: docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
 
       - name: Deploy no Azure Container Apps
         run: |
@@ -44,4 +43,10 @@ jobs:
             --name ${{ env.CONTAINERAPP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
+            --registry-server ${{ env.REGISTRY_NAME }}.azurecr.io \
+            --registry-username ${{ env.ACR_USERNAME }} \
+            --registry-password ${{ env.ACR_PASSWORD }} \
             --set-env-vars ASPNETCORE_ENVIRONMENT=Production
+
+      - name: Obter URL público do Container App
+        run: az containerapp show -n ${{ env.CONTAINERAPP_NAME }} -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv
