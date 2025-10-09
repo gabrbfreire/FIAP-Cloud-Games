@@ -26,18 +26,27 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login no ACR usando Azure Login
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Registrar provedor Microsoft.App
+        run: |
+          az provider register --namespace Microsoft.App --wait
+          # Aguarda até que o registro esteja completo
+          az provider show -n Microsoft.App --query registrationState -o tsv
+
+      - name: Registrar provedor Microsoft.OperationalInsights (se necessário)
+        run: |
+          az provider register --namespace Microsoft.OperationalInsights --wait
+
+      - name: Login no ACR usando Azure CLI
+        run: |
+          az acr login --name ${{ env.REGISTRY_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}
 
       - name: Build da imagem Docker
-        run: docker build -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest -f src/FiapCloudGames.API/Dockerfile .
+        run: |
+          docker build -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest -f src/FiapCloudGames.API/Dockerfile .
 
       - name: Push da imagem para o ACR
-        run: docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+        run: |
+          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
 
       - name: Deploy no Azure Container Apps
         run: |
@@ -47,4 +56,6 @@ jobs:
             --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
 
       - name: Obter URL público do Container App
-        run: az containerapp show -n ${{ env.CONTAINERAPP_NAME }} -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv
+        run: |
+          URL=$(az containerapp show -n ${{ env.CONTAINERAPP_NAME }} -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+          echo "Container App URL: $URL"
