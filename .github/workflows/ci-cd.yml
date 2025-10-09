@@ -10,7 +10,6 @@ env:
   RESOURCE_GROUP: fiapcloudgames-rg
   CONTAINERAPP_NAME: fiapcloudgames-api
   ENVIRONMENT: fiapcloudgames-env
-  SUBSCRIPTION_ID: "6b608dde-ef80-41c4-aba5-61c99963a92a"  # ✅ Subscription correta
 
 jobs:
   build-and-deploy:
@@ -25,18 +24,33 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Definir subscription padrão
+      - name: Descobrir subscriptions disponíveis
         run: |
-          az account set --subscription ${{ env.SUBSCRIPTION_ID }}
-          echo "✅ Subscription definida: ${{ env.SUBSCRIPTION_ID }}"
-
-      - name: Verificar recursos
-        run: |
-          echo "🔍 Verificando ACR..."
-          az acr show --name ${{ env.REGISTRY_NAME }} --query "{Name:name, ResourceGroup:resourceGroup, Location:location}" --output table
+          echo "🔍 Listando subscriptions disponíveis..."
+          az account list --query "[].{Name:name, Id:id, IsDefault:isDefault}" -o table
           
-          echo "🔍 Verificando Resource Group..."
-          az group show --name ${{ env.RESOURCE_GROUP }} --query "{Name:name, Location:location}" --output table
+          echo "🔍 Subscription atual:"
+          az account show --query "{Name:name, Id:id}" -o table
+
+      - name: Procurar o ACR em todas as subscriptions
+        run: |
+          echo "🔎 Procurando ACR em todas as subscriptions..."
+          az acr list --query "[].{Name:name, ResourceGroup:resourceGroup, Location:location, Subscription:id}" -o table
+
+      - name: Procurar o Resource Group em todas as subscriptions
+        run: |
+          echo "🔎 Procurando Resource Group em todas as subscriptions..."
+          SUBSCRIPTIONS=$(az account list --query "[].id" -o tsv)
+          
+          for sub in $SUBSCRIPTIONS; do
+            echo "Verificando subscription: $sub"
+            az account set --subscription $sub
+            if az group show --name ${{ env.RESOURCE_GROUP }} &> /dev/null; then
+              echo "✅ Resource Group encontrado na subscription: $sub"
+              echo "SUBSCRIPTION_ID=$sub" >> $GITHUB_ENV
+              break
+            fi
+          done
 
       - name: Login no ACR com admin credentials
         run: |
@@ -46,39 +60,23 @@ jobs:
           
           echo "🐳 Fazendo login no Docker Registry..."
           echo $ACR_PASSWORD | docker login ${{ env.REGISTRY_NAME }}.azurecr.io --username $ACR_USERNAME --password-stdin
-          echo "✅ Login no ACR realizado com sucesso!"
 
-      - name: Build da imagem Docker
+      - name: Build e push da imagem Docker
         run: |
-          echo "🏗️ Building Docker image..."
           docker build \
-            -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
             -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             -f src/FiapCloudGames.API/Dockerfile .
-          echo "✅ Build da imagem concluído!"
-
-      - name: Push da imagem para o ACR
-        run: |
-          echo "📤 Enviando imagem para o ACR..."
-          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+          
           docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          echo "✅ Imagem enviada com sucesso!"
 
       - name: Deploy no Azure Container Apps
         run: |
-          echo "🚀 Realizando deploy no Container Apps..."
           az containerapp update \
             --name ${{ env.CONTAINERAPP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          echo "✅ Deploy concluído!"
 
       - name: Obter URL público do Container App
         run: |
-          URL=$(az containerapp show \
-            -n ${{ env.CONTAINERAPP_NAME }} \
-            -g ${{ env.RESOURCE_GROUP }} \
-            --query properties.configuration.ingress.fqdn \
-            -o tsv)
+          URL=$(az containerapp show -n ${{ env.CONTAINERAPP_NAME }} -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
           echo "🌐 Application URL: https://$URL"
-          echo "📦 Image Version: ${{ github.sha }}"
