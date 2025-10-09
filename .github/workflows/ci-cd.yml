@@ -3,8 +3,6 @@ name: CI/CD - Fiap Cloud Games
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 env:
   REGISTRY_NAME: fcgregistrygabriel
@@ -26,19 +24,9 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Registrar provedor Microsoft.App
+      - name: Login no ACR (corrigido)
         run: |
-          az provider register --namespace Microsoft.App --wait
-          # Aguarda até que o registro esteja completo
-          az provider show -n Microsoft.App --query registrationState -o tsv
-
-      - name: Registrar provedor Microsoft.OperationalInsights (se necessário)
-        run: |
-          az provider register --namespace Microsoft.OperationalInsights --wait
-
-      - name: Login no ACR usando Azure CLI
-        run: |
-          az acr login --name ${{ env.REGISTRY_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}
+          az acr login --name ${{ env.REGISTRY_NAME }}
 
       - name: Build da imagem Docker
         run: |
@@ -58,4 +46,4 @@ jobs:
       - name: Obter URL público do Container App
         run: |
           URL=$(az containerapp show -n ${{ env.CONTAINERAPP_NAME }} -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
-          echo "Container App URL: $URL"
+          echo "🚀 Container App URL: https://$URL"
