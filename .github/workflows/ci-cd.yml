@@ -26,8 +26,12 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login no ACR
-        run: az acr login --name ${{ env.REGISTRY_NAME }}
+      - name: Login no ACR usando Azure Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Build da imagem Docker
         run: docker build -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest -f src/FiapCloudGames.API/Dockerfile .
