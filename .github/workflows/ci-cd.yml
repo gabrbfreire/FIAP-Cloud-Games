@@ -9,35 +9,57 @@ env:
   IMAGE_NAME: fiapcloudgames
   RESOURCE_GROUP: fiapcloudgames-rg
   CONTAINERAPP_NAME: fiapcloudgames-api
+  ENVIRONMENT: fiapcloudgames-env
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Login Azure
+      - name: Login no Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login ACR
+      - name: Login no ACR
         run: az acr login --name ${{ env.REGISTRY_NAME }}
 
-      - name: Build and Push
+      - name: Build da imagem Docker
         run: |
-          docker build -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} -f src/FiapCloudGames.API/Dockerfile .
+          docker build \
+            -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
+            -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            -f src/FiapCloudGames.API/Dockerfile .
+
+      - name: Push da imagem para o ACR
+        run: |
+          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Deploy
+      - name: Deploy no Azure Container Apps com Database
         run: |
           az containerapp update \
             --name ${{ env.CONTAINERAPP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --set-env-vars "ConnectionStrings__DefaultConnection=${{ secrets.CONNECTION_STRING }}"
 
-      - name: Get URL
+      - name: Aguardar aplicação inicializar
+        run: sleep 30
+
+      - name: Testar aplicação
         run: |
           URL=$(az containerapp show -n ${{ env.CONTAINERAPP_NAME }} -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
-          echo "🌐 URL: https://$URL"
+          echo "🌐 Application URL: https://$URL"
+          
+          # Testar se a aplicação responde
+          curl -f --retry 3 --retry-delay 10 https://$URL/ || echo "⚠️ Aplicação ainda inicializando"
+          curl -f https://$URL/health 2>/dev/null && echo "✅ Health check passou" || echo "⚠️ Health check não disponível"
+
+      - name: Verificar logs da aplicação
+        run: |
+          echo "📋 Últimos logs da aplicação:"
+          az containerapp logs show -n ${{ env.CONTAINERAPP_NAME }} -g ${{ env.RESOURCE_GROUP }} --tail 10
