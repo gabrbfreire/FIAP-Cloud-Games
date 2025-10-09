@@ -9,84 +9,35 @@ env:
   IMAGE_NAME: fiapcloudgames
   RESOURCE_GROUP: fiapcloudgames-rg
   CONTAINERAPP_NAME: fiapcloudgames-api
-  ENVIRONMENT: fiapcloudgames-env
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout do código
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Login no Azure
+      - name: Login Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: VERIFICAR SUBSCRIPTION ATUAL
-        run: |
-          echo "🔍 SUBSCRIPTION ATUAL:"
-          az account show --query "{Name:name, Id:id}" -o table
+      - name: Login ACR
+        run: az acr login --name ${{ env.REGISTRY_NAME }}
 
-      - name: TENTAR MUDAR PARA SUBSCRIPTION CORRETA
+      - name: Build and Push
         run: |
-          echo "🔄 TENTANDO Mudar para subscription: 6b608dde-ef80-41c4-aba5-61c99963a92a"
-          az account set --subscription 6b608dde-ef80-41c4-aba5-61c99963a92a || echo "❌ Não conseguiu mudar subscription"
+          docker build -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} -f src/FiapCloudGames.API/Dockerfile .
+          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      - name: VERIFICAR NOVA SUBSCRIPTION
+      - name: Deploy
         run: |
-          echo "🔍 NOVA SUBSCRIPTION:"
-          az account show --query "{Name:name, Id:id}" -o table
-
-      - name: VERIFICAR SE ACR EXISTE
-        run: |
-          echo "🔍 Procurando ACR..."
-          az acr list --query "[].{Name:name, ResourceGroup:resourceGroup, Subscription:id}" -o table
-
-      - name: LOGIN NO ACR USANDO ADMIN - MÉTODO DIRETO
-        run: |
-          echo "🔐 MÉTODO DIRETO: Obtendo credenciais do ACR..."
-          
-          # Tentar obter as credenciais do ACR diretamente
-          ACR_USERNAME=$(az acr credential show --name ${{ env.REGISTRY_NAME }} --query "username" -o tsv 2>/dev/null || echo "fcgregistrygabriel")
-          ACR_PASSWORD=$(az acr credential show --name ${{ env.REGISTRY_NAME }} --query "passwords[0].value" -o tsv 2>/dev/null || echo "")
-          
-          if [ -z "$ACR_PASSWORD" ]; then
-            echo "❌ Não conseguiu obter senha via Azure CLI"
-            echo "🔑 Usando senha manual..."
-            # Você precisa adicionar esta senha como secret no GitHub!
-            ACR_PASSWORD="${{ secrets.ACR_PASSWORD }}"
-          fi
-          
-          echo "🐳 Fazendo login no Docker Registry..."
-          echo $ACR_PASSWORD | docker login ${{ env.REGISTRY_NAME }}.azurecr.io --username $ACR_USERNAME --password-stdin
-          echo "✅ Login no ACR realizado!"
-
-      - name: Build da imagem Docker
-        run: |
-          echo "🏗️ Building Docker image..."
-          docker build \
-            -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
-            -f src/FiapCloudGames.API/Dockerfile .
-          echo "✅ Build concluído!"
-
-      - name: Push da imagem para o ACR
-        run: |
-          echo "📤 Enviando imagem para o ACR..."
-          docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
-          echo "✅ Push concluído!"
-
-      - name: Deploy no Azure Container Apps
-        run: |
-          echo "🚀 Fazendo deploy..."
           az containerapp update \
             --name ${{ env.CONTAINERAPP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
-          echo "✅ Deploy concluído!"
+            --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Obter URL público
+      - name: Get URL
         run: |
           URL=$(az containerapp show -n ${{ env.CONTAINERAPP_NAME }} -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
-          echo "🌐 URL DA APLICAÇÃO: https://$URL"
+          echo "🌐 URL: https://$URL"
