@@ -1,52 +1,49 @@
-name: CI/CD - FiapCloudGames
+name: Deploy to Azure App Service (Container)
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 env:
+  RESOURCE_GROUP: fiapcloudgames-rg
   REGISTRY_NAME: fcgregistrygabriel123
   IMAGE_NAME: fiapcloudgames
   WEBAPP_NAME: fiapcloudgames-api
-  RESOURCE_GROUP: fiapcloudgames-rg
+  LOCATION: centralus
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v3
+      - name: 🔹 Checkout do código
+        uses: actions/checkout@v4
 
-      - name: Login no Azure
-        uses: azure/login@v1
+      - name: 🔹 Login no Azure
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Obter credenciais do ACR
-        id: acr-creds
+      - name: 🔹 Login no Azure Container Registry
         run: |
-          USERNAME=$(az acr credential show -n $REGISTRY_NAME --query "username" -o tsv)
-          PASSWORD=$(az acr credential show -n $REGISTRY_NAME --query "passwords[0].value" -o tsv)
-          echo "USERNAME=$USERNAME" >> $GITHUB_ENV
-          echo "PASSWORD=$PASSWORD" >> $GITHUB_ENV
+          az acr login --name $REGISTRY_NAME
 
-      - name: Login no ACR
-        run: echo $PASSWORD | docker login $REGISTRY_NAME.azurecr.io -u $USERNAME --password-stdin
-
-      - name: Build e Push da imagem Docker
+      - name: 🔹 Build e push da imagem Docker
         run: |
           docker build -t $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:latest .
           docker push $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:latest
 
-      - name: Atualizar Web App com nova imagem
+      - name: 🔹 Atualizar Web App para usar nova imagem
         run: |
           az webapp config container set \
             --name $WEBAPP_NAME \
             --resource-group $RESOURCE_GROUP \
             --docker-custom-image-name $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:latest \
-            --docker-registry-server-url https://$REGISTRY_NAME.azurecr.io \
-            --docker-registry-server-user $USERNAME \
-            --docker-registry-server-password $PASSWORD
+            --docker-registry-server-url https://$REGISTRY_NAME.azurecr.io
+
+      - name: 🔹 Reiniciar o App Service
+        run: |
+          az webapp restart \
+            --name $WEBAPP_NAME \
+            --resource-group $RESOURCE_GROUP
