@@ -1,4 +1,4 @@
-name: Deploy Web App Azure
+name: CI/CD Azure WebApp
 
 on:
   push:
@@ -9,39 +9,37 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # 1. Checkout do código
+      # 1️⃣ Checkout do código
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Login no Azure usando o secret
-      - name: Login Azure
+      # 2️⃣ Login no Azure
+      - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3. Login no Azure Container Registry
-      - name: Login ACR
-        run: |
-          az acr login --name fcgregistrygabrielfg
-
-      # 4. Build da imagem Docker
+      # 3️⃣ Build da imagem Docker
       - name: Build Docker image
         run: |
           docker build -t fcgregistrygabrielfg.azurecr.io/fiapcloudgames:latest .
 
-      # 5. Push da imagem para o ACR
-      - name: Push Docker image
+      # 4️⃣ Login no ACR
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name fcgregistrygabrielfg
+
+      # 5️⃣ Push da imagem para o ACR
+      - name: Push Docker image to ACR
         run: |
           docker push fcgregistrygabrielfg.azurecr.io/fiapcloudgames:latest
 
-      # 6. Configurar o Web App para usar a imagem do ACR
-      - name: Update Web App with container
+      # 6️⃣ Deploy para o Web App
+      - name: Deploy to Azure Web App
         run: |
           az webapp config container set \
             --name fiapcloudgamesappfg456 \
             --resource-group fiapcloudgames-rg \
-            --docker-custom-image-name fcgregistrygabrielfg.azurecr.io/fiapcloudgames:latest \
-            --docker-registry-server-url https://fcgregistrygabrielfg.azurecr.io \
-            --docker-registry-server-user $(az acr credential show -n fcgregistrygabrielfg --query "username" -o tsv) \
-            --docker-registry-server-password $(az acr credential show -n fcgregistrygabrielfg --query "passwords[0].value" -o tsv)
+            --docker-custom-image-name fcgregistrygabrielfg.azurecr.io/fiapcloudgames:latest
