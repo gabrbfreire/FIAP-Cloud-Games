@@ -34,4 +34,15 @@ jobs:
           az acr login --name fcgregistrygabrielfg
 
       # 5. Push da imagem para o ACR
-      - name: Push Docker
+      - name: Push Docker image to ACR
+        run: |
+          docker push fcgregistrygabrielfg.azurecr.io/fiapcloudgames:latest
+
+      # 6. Deploy para o Azure Web App
+      - name: Deploy to Azure Web App
+        run: |
+          az webapp config container set \
+            --name fiapcloudgamesappfg456 \
+            --resource-group fiapcloudgames-rg \
+            --docker-custom-image-name fcgregistrygabrielfg.azurecr.io/fiapcloudgames:latest \
+            --docker-registry-server-url https://fcgregistrygabrielfg.azurecr.io
