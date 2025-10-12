@@ -1,4 +1,4 @@
-﻿using FiapCloudGames.API.DTOs.Auth;
+using FiapCloudGames.API.DTOs.Auth;
 using FiapCloudGames.Core.Entities.Identity;
 using FiapCloudGames.Core.Interfaces.Identity;
 using FiapCloudGames.Infra.Data;
@@ -18,13 +18,15 @@ public class AuthController : ControllerBase
     private readonly ITokenService _tokenService;
     private readonly IAuthService _authService;
     private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
 
     public AuthController(UserManager<ApplicationUser> userManager,
                  RoleManager<IdentityRole> roleManager,
                  ILogger<AuthController> logger,
                  ITokenService tokenService,
                  AppDbContext context,
-                 IAuthService authService)
+                 IAuthService authService,
+                 IConfiguration configuration)
     {
         _userManager = userManager;
         _roleManager = roleManager;
@@ -32,6 +34,7 @@ public class AuthController : ControllerBase
         _tokenService = tokenService;
         _context = context;
         _authService = authService;
+        _configuration = configuration;
     }
 
     [HttpPost("signup")]
@@ -69,5 +72,34 @@ public class AuthController : ControllerBase
             return Ok();
         else
             return BadRequest("E-mail inválido.");
+    }
+
+    [HttpGet("testDb")]
+    public IActionResult TestDb()
+    {
+        try
+        {
+            using var conn = new Npgsql.NpgsqlConnection(_configuration.GetConnectionString("default"));
+            conn.Open();
+            conn.Close();
+            return Ok("Conexão com banco OK");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Erro ao conectar: {ex.Message}");
+        }
+    }
+
+    [HttpGet("healthCheck")]
+    public IActionResult HealthCheck()
+    {
+        try
+        {
+            return Ok("Aplicãção rodando");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Erro ao conectar");
+        }
     }
 }
