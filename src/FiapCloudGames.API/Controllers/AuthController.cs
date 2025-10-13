@@ -1,4 +1,4 @@
-﻿using FiapCloudGames.API.DTOs.Auth;
+using FiapCloudGames.API.DTOs.Auth;
 using FiapCloudGames.Core.Entities.Identity;
 using FiapCloudGames.Core.Interfaces.Identity;
 using FiapCloudGames.Infra.Data;
