@@ -95,7 +95,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            return Ok("Aplicãção rodando");
+            return Ok("Aplicação rodando");
         }
         catch (Exception ex)
         {
