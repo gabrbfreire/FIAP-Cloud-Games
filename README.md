@@ -16,7 +16,7 @@ A aplicação **FIAP Cloud Games** é uma API desenvolvida em **.NET 8** com aut
   - PostgreSQL hospedado no **Azure Database for PostgreSQL – Flexible Server** (`fiapcloudgames-db-2`).  
   - Acesso via `Entity Framework Core` e `Dapper`.  
 - **Documentação:**  
-  - Gerada automaticamente com **Swagger**.  
+  - Gerada automaticamente com **Swagger** (https://fiapcloudgamesappfg456.azurewebsites.net/swagger/index.html).  
 - **Testes Unitários:**  
   - Feitos com **xUnit** e **Moq**.  
 - **Containerização:**  
